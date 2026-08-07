@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Foster A Wag — Implementation Plan</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --amber: #D97706;
+    --amber-light: #FEF3C7;
+    --amber-mid: #F59E0B;
+    --forest: #14532D;
+    --forest-mid: #166534;
+    --forest-light: #DCFCE7;
+    --cream: #FFFBEB;
+    --charcoal: #1C1917;
+    --slate: #44403C;
+    --muted: #78716C;
+    --border: #E7E5E4;
+    --white: #FFFFFF;
+    --rescue-blue: #1E40AF;
+    --rescue-blue-light: #DBEAFE;
+    --match-purple: #6D28D9;
+    --match-purple-light: #EDE9FE;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--charcoal);
+    line-height: 1.6;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--forest);
+    padding: 48px 0 40px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 70% 50%, rgba(245,158,11,.18) 0%, transparent 60%);
+  }
+  .paw-bg {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    opacity: 0.04;
+    font-size: 120px;
+    display: flex; flex-wrap: wrap; gap: 40px; align-items: center; justify-content: center;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .site-eyebrow {
+    font-size: 12px; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--amber-mid); font-weight: 600; margin-bottom: 12px;
+    position: relative;
+  }
+  .site-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(36px, 6vw, 64px);
+    color: var(--white);
+    line-height: 1.1;
+    position: relative;
+  }
+  .site-title em { color: var(--amber-mid); font-style: italic; }
+  .site-subtitle {
+    margin-top: 14px;
+    color: rgba(255,255,255,.65);
+    font-size: 16px; max-width: 520px; margin-left: auto; margin-right: auto;
+    position: relative;
+  }
+
+  /* ── LAYOUT ── */
+  .container { max-width: 1080px; margin: 0 auto; padding: 0 28px; }
+
+  /* ── NAV PILLS ── */
+  .nav-strip {
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 50;
+    box-shadow: 0 1px 8px rgba(0,0,0,.06);
+  }
+  .nav-inner {
+    display: flex; gap: 4px; padding: 10px 28px; overflow-x: auto;
+    max-width: 1080px; margin: 0 auto;
+    scrollbar-width: none;
+  }
+  .nav-inner::-webkit-scrollbar { display: none; }
+  .nav-pill {
+    white-space: nowrap; padding: 6px 16px; border-radius: 99px;
+    font-size: 13px; font-weight: 500; cursor: pointer; border: none;
+    background: transparent; color: var(--muted); transition: all .18s;
+  }
+  .nav-pill:hover { background: var(--amber-light); color: var(--amber); }
+  .nav-pill.active { background: var(--amber); color: var(--white); }
+
+  /* ── SECTIONS ── */
+  section { padding: 60px 0; }
+  section + section { border-top: 1px solid var(--border); }
+
+  .section-label {
+    font-size: 11px; letter-spacing: .2em; text-transform: uppercase;
+    font-weight: 600; color: var(--muted); margin-bottom: 8px;
+  }
+  .section-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(24px, 4vw, 36px);
+    color: var(--charcoal); margin-bottom: 8px;
+  }
+  .section-desc {
+    color: var(--slate); font-size: 15px; max-width: 620px; margin-bottom: 36px;
+  }
+
+  /* ── TECH STACK ── */
+  .stack-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px;
+  }
+  .stack-card {
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px 20px;
+    transition: box-shadow .18s;
+  }
+  .stack-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,.07); }
+  .stack-layer {
+    font-size: 10px; letter-spacing: .14em; text-transform: uppercase;
+    font-weight: 700; color: var(--muted); margin-bottom: 4px;
+  }
+  .stack-tech { font-size: 15px; font-weight: 600; color: var(--charcoal); margin-bottom: 4px; }
+  .stack-reason { font-size: 12px; color: var(--muted); }
+
+  /* ── FEATURE CATEGORIES ── */
+  .cat-tabs { display: flex; gap: 8px; margin-bottom: 28px; flex-wrap: wrap; }
+  .cat-tab {
+    padding: 8px 20px; border-radius: 99px; border: 2px solid transparent;
+    font-size: 14px; font-weight: 500; cursor: pointer; transition: all .18s;
+  }
+  .cat-tab.foster { border-color: var(--amber); color: var(--amber); background: transparent; }
+  .cat-tab.foster.active, .cat-tab.foster:hover { background: var(--amber); color: var(--white); }
+  .cat-tab.rescue { border-color: var(--rescue-blue); color: var(--rescue-blue); background: transparent; }
+  .cat-tab.rescue.active, .cat-tab.rescue:hover { background: var(--rescue-blue); color: var(--white); }
+  .cat-tab.matching { border-color: var(--match-purple); color: var(--match-purple); background: transparent; }
+  .cat-tab.matching.active, .cat-tab.matching:hover { background: var(--match-purple); color: var(--white); }
+
+  .feature-panel { display: none; }
+  .feature-panel.active { display: block; }
+
+  .feature-list { display: flex; flex-direction: column; gap: 16px; }
+  .feature-item {
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: 14px; padding: 22px 24px;
+    border-left: 4px solid var(--border);
+    transition: box-shadow .15s;
+  }
+  .feature-item:hover { box-shadow: 0 4px 16px rgba(0,0,0,.07); }
+  .feature-item.foster { border-left-color: var(--amber); }
+  .feature-item.rescue { border-left-color: var(--rescue-blue); }
+  .feature-item.matching { border-left-color: var(--match-purple); }
+
+  .feature-name { font-weight: 600; font-size: 15px; margin-bottom: 6px; color: var(--charcoal); }
+  .feature-desc { font-size: 13.5px; color: var(--slate); line-height: 1.55; }
+  .feature-fields { margin-top: 10px; }
+  .feature-fields-label {
+    font-size: 11px; font-weight: 700; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 6px;
+  }
+  .field-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .field-chip {
+    padding: 3px 10px; border-radius: 99px;
+    font-size: 12px; font-weight: 500;
+    background: var(--amber-light); color: var(--amber);
+  }
+  .field-chip.rescue { background: var(--rescue-blue-light); color: var(--rescue-blue); }
+  .field-chip.matching { background: var(--match-purple-light); color: var(--match-purple); }
+  .field-chip.neutral { background: var(--border); color: var(--slate); }
+
+  /* ── DB SCHEMA ── */
+  .schema-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;
+  }
+  .schema-table {
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: 12px; overflow: hidden;
+  }
+  .schema-header {
+    padding: 12px 16px; font-weight: 700; font-size: 13px;
+    background: var(--charcoal); color: var(--white);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .schema-header span { opacity: .55; font-weight: 400; }
+  .schema-fields { padding: 0; }
+  .schema-field {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 8px 16px; border-bottom: 1px solid var(--border);
+    font-size: 12.5px;
+  }
+  .schema-field:last-child { border-bottom: none; }
+  .field-name { font-weight: 600; color: var(--charcoal); min-width: 130px; }
+  .field-type { color: var(--muted); font-size: 11px; background: var(--border); padding: 1px 6px; border-radius: 4px; white-space: nowrap; }
+
+  /* ── ROUTES ── */
+  .routes-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  .routes-table th {
+    text-align: left; padding: 10px 16px;
+    background: var(--charcoal); color: var(--white);
+    font-size: 11px; letter-spacing: .1em; text-transform: uppercase;
+  }
+  .routes-table th:first-child { border-radius: 10px 0 0 0; }
+  .routes-table th:last-child { border-radius: 0 10px 0 0; }
+  .routes-table td { padding: 10px 16px; border-bottom: 1px solid var(--border); }
+  .routes-table tr:last-child td { border-bottom: none; }
+  .routes-table tr:nth-child(even) td { background: rgba(0,0,0,.02); }
+  .route-path { font-family: 'Courier New', monospace; font-weight: 600; color: var(--amber); }
+  .route-badge {
+    display: inline-block; padding: 2px 8px; border-radius: 4px;
+    font-size: 11px; font-weight: 600;
+  }
+  .badge-public { background: var(--forest-light); color: var(--forest-mid); }
+  .badge-foster { background: var(--amber-light); color: var(--amber); }
+  .badge-rescue { background: var(--rescue-blue-light); color: var(--rescue-blue); }
+  .badge-admin { background: #FCE7F3; color: #9D174D; }
+
+  /* ── PHASES ── */
+  .phases { display: flex; flex-direction: column; gap: 0; position: relative; }
+  .phases::before {
+    content: ''; position: absolute; left: 28px; top: 28px; bottom: 28px;
+    width: 2px; background: var(--border);
+  }
+  .phase-item {
+    display: flex; gap: 24px; padding: 24px 0;
+  }
+  .phase-dot {
+    width: 56px; height: 56px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'DM Serif Display', serif;
+    font-size: 20px; color: var(--white);
+    background: var(--amber); position: relative; z-index: 1;
+    box-shadow: 0 0 0 4px var(--cream);
+  }
+  .phase-dot.p2 { background: var(--forest-mid); }
+  .phase-dot.p3 { background: var(--rescue-blue); }
+  .phase-dot.p4 { background: var(--match-purple); }
+  .phase-dot.p5 { background: var(--slate); }
+  .phase-content { padding-top: 8px; flex: 1; }
+  .phase-title { font-weight: 700; font-size: 16px; margin-bottom: 4px; }
+  .phase-weeks { font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+  .phase-tasks { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  .phase-task {
+    font-size: 13.5px; color: var(--slate);
+    padding: 7px 12px; background: var(--white);
+    border: 1px solid var(--border); border-radius: 8px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .phase-task::before {
+    content: ''; width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+    background: var(--amber);
+  }
+  .phase-item:nth-child(2) .phase-task::before { background: var(--forest-mid); }
+  .phase-item:nth-child(3) .phase-task::before { background: var(--rescue-blue); }
+  .phase-item:nth-child(4) .phase-task::before { background: var(--match-purple); }
+  .phase-item:nth-child(5) .phase-task::before { background: var(--slate); }
+
+  /* ── ROLES ── */
+  .roles-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .role-card {
+    border-radius: 14px; padding: 24px;
+    text-align: center;
+  }
+  .role-card.foster { background: var(--amber-light); }
+  .role-card.rescue { background: var(--rescue-blue-light); }
+  .role-card.admin { background: var(--forest-light); }
+  .role-icon { font-size: 36px; margin-bottom: 10px; }
+  .role-name { font-weight: 700; font-size: 16px; margin-bottom: 6px; }
+  .role-desc { font-size: 13px; color: var(--slate); }
+
+  /* ── FOOTER ── */
+  footer {
+    background: var(--charcoal); color: rgba(255,255,255,.45);
+    text-align: center; padding: 24px;
+    font-size: 13px;
+  }
+  footer strong { color: rgba(255,255,255,.8); }
+
+  @media (max-width: 640px) {
+    .roles-grid { grid-template-columns: 1fr; }
+    .schema-grid { grid-template-columns: 1fr; }
+    .stack-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="paw-bg">
+    🐾🐾🐾🐾🐾🐾🐾🐾🐾🐾🐾🐾🐾🐾🐾🐾🐾🐾🐾🐾
+  </div>
+  <div class="site-eyebrow">Implementation Plan · 2026</div>
+  <h1 class="site-title">Foster <em>A Wag</em></h1>
+  <p class="site-subtitle">A web platform connecting rescue operations with foster families to find loving temporary homes for animals in need.</p>
+</header>
+
+<nav class="nav-strip">
+  <div class="nav-inner">
+    <button class="nav-pill active" onclick="scrollTo('overview')">Overview</button>
+    <button class="nav-pill" onclick="scrollTo('stack')">Tech Stack</button>
+    <button class="nav-pill" onclick="scrollTo('features')">Features</button>
+    <button class="nav-pill" onclick="scrollTo('schema')">Database</button>
+    <button class="nav-pill" onclick="scrollTo('routes')">Routes</button>
+    <button class="nav-pill" onclick="scrollTo('phases')">Phases</button>
+    <button class="nav-pill" onclick="scrollTo('v2')">V2 Ideas</button>
+  </div>
+</nav>
+
+<!-- OVERVIEW -->
+<section id="overview">
+  <div class="container">
+    <div class="section-label">01 — Overview</div>
+    <h2 class="section-title">What are we building?</h2>
+    <p class="section-desc">Foster A Wag is a two-sided platform where rescue organizations post animals needing temporary homes, and fosters discover and apply to care for them.</p>
+    <div class="roles-grid">
+      <div class="role-card foster">
+        <div class="role-icon">🏡</div>
+        <div class="role-name">Foster</div>
+        <div class="role-desc">Individuals and families who register their home and availability to temporarily care for rescue animals.</div>
+      </div>
+      <div class="role-card rescue">
+        <div class="role-icon">🏥</div>
+        <div class="role-name">Rescue Organization</div>
+        <div class="role-desc">Registered organizations that post animals needing foster placement and manage incoming applications.</div>
+      </div>
+      <div class="role-card admin">
+        <div class="role-icon">🔑</div>
+        <div class="role-name">Admin</div>
+        <div class="role-desc">Platform moderators who verify organizations, manage disputes, and ensure platform integrity.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TECH STACK -->
+<section id="stack">
+  <div class="container">
+    <div class="section-label">02 — Tech Stack</div>
+    <h2 class="section-title">Recommended technologies</h2>
+    <p class="section-desc">A modern, deployable-quickly stack with strong ecosystem support and type safety throughout.</p>
+    <div class="stack-grid">
+      <div class="stack-card">
+        <div class="stack-layer">Frontend</div>
+        <div class="stack-tech">Next.js 14 (React)</div>
+        <div class="stack-reason">SSR for SEO, App Router, unified full-stack codebase</div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-layer">Styling</div>
+        <div class="stack-tech">Tailwind CSS + shadcn/ui</div>
+        <div class="stack-reason">Fast, accessible, consistent UI components</div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-layer">Database</div>
+        <div class="stack-tech">PostgreSQL + Prisma ORM</div>
+        <div class="stack-reason">Relational data model; Prisma adds type safety &amp; migrations</div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-layer">Authentication</div>
+        <div class="stack-tech">NextAuth.js or Clerk</div>
+        <div class="stack-reason">Email/password + Google OAuth; role-based sessions</div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-layer">File Storage</div>
+        <div class="stack-tech">Cloudinary or AWS S3</div>
+        <div class="stack-reason">Pet photo uploads, image transformation &amp; CDN</div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-layer">Email / Reminders</div>
+        <div class="stack-tech">Resend or SendGrid</div>
+        <div class="stack-reason">Transactional emails, reminders, application alerts</div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-layer">Cron / Background Jobs</div>
+        <div class="stack-tech">Vercel Cron or node-cron</div>
+        <div class="stack-reason">Availability reminder scheduling for fosters</div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-layer">Hosting</div>
+        <div class="stack-tech">Vercel + Railway</div>
+        <div class="stack-reason">Zero-config deploys, scalable Postgres hosting</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="container">
+    <div class="section-label">03 — Features</div>
+    <h2 class="section-title">Feature breakdown</h2>
+    <p class="section-desc">All requirements grouped by the three platform categories. Click each tab to explore.</p>
+
+    <div class="cat-tabs">
+      <button class="cat-tab foster active" onclick="showCat('foster', this)">🏡 Foster Registration</button>
+      <button class="cat-tab rescue" onclick="showCat('rescue', this)">🏥 Rescue Registration</button>
+      <button class="cat-tab matching" onclick="showCat('matching', this)">🔗 Pet Matching</button>
+    </div>
+
+    <!-- Foster Panel -->
+    <div class="feature-panel active" id="panel-foster">
+      <div class="feature-list">
+
+        <div class="feature-item foster">
+          <div class="feature-name">Self-Registration as a Foster</div>
+          <div class="feature-desc">A dedicated sign-up flow at <code>/register/foster</code> where individuals create an account and are assigned the FOSTER role. Email verification is sent on completion.</div>
+          <div class="feature-fields">
+            <div class="feature-fields-label">Form Fields</div>
+            <div class="field-chips">
+              <span class="field-chip">Full Name</span>
+              <span class="field-chip">Email</span>
+              <span class="field-chip">Password</span>
+              <span class="field-chip">Email Verification</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="feature-item foster">
+          <div class="feature-name">Store Contact Information</div>
+          <div class="feature-desc">After signup, fosters complete their profile with contact details stored in the <code>foster_profiles</code> table. Contact info is never exposed publicly — it's shared only after a match is initiated.</div>
+          <div class="feature-fields">
+            <div class="feature-fields-label">Form Fields</div>
+            <div class="field-chips">
+              <span class="field-chip">Phone Number</span>
+              <span class="field-chip">City</span>
+              <span class="field-chip">Province / State</span>
+              <span class="field-chip">Postal Code</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="feature-item foster">
+          <div class="feature-name">Store Home Setup</div>
+          <div class="feature-desc">Fosters describe their living situation to help rescues assess suitability for specific pets. Stored as a JSONB field for flexibility. Required to unlock browsing pet listings.</div>
+          <div class="feature-fields">
+            <div class="feature-fields-label">Form Fields</div>
+            <div class="field-chips">
+              <span class="field-chip">Dwelling Type</span>
+              <span class="field-chip">Fenced Backyard</span>
+              <span class="field-chip">No. of Adults</span>
+              <span class="field-chip">No. of Children</span>
+              <span class="field-chip">Other Pets</span>
+              <span class="field-chip">Outdoor Space</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="feature-item foster">
+          <div class="feature-name">Store Availability Date</div>
+          <div class="feature-desc">Fosters set a start date and optional end date for their availability window. This data surfaces in the rescue-facing foster browse view and is used to filter relevant matches.</div>
+          <div class="feature-fields">
+            <div class="feature-fields-label">Form Fields</div>
+            <div class="field-chips">
+              <span class="field-chip">Available From (date picker)</span>
+              <span class="field-chip">Available Until (optional)</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="feature-item foster">
+          <div class="feature-name">Store Pet Preferences</div>
+          <div class="feature-desc">Fosters indicate which types of animals they're open to fostering, as well as sub-preferences for size, age group, and willingness to take on special needs pets.</div>
+          <div class="feature-fields">
+            <div class="feature-fields-label">Form Fields</div>
+            <div class="field-chips">
+              <span class="field-chip">Species (multi-select)</span>
+              <span class="field-chip">Preferred Size</span>
+              <span class="field-chip">Age Range</span>
+              <span class="field-chip">Special Needs OK?</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="feature-item foster">
+          <div class="feature-name">Setup Availability Reminders</div>
+          <div class="feature-desc">Fosters set how often they want to be reminded to confirm or update their availability. A background cron job queries fosters whose reminder date is due and sends a prompt email via Resend/SendGrid, then schedules the next reminder.</div>
+          <div class="feature-fields">
+            <div class="feature-fields-label">Options</div>
+            <div class="field-chips">
+              <span class="field-chip">Weekly</span>
+              <span class="field-chip">Monthly</span>
+              <span class="field-chip">Custom Interval</span>
+              <span class="field-chip neutral">Cron Job: node-cron / Vercel Cron</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Rescue Panel -->
+    <div class="feature-panel" id="panel-rescue">
+      <div class="feature-list">
+
+        <div class="feature-item rescue">
+          <div class="feature-name">Rescue Organization Registration</div>
+          <div class="feature-desc">A dedicated sign-up flow at <code>/register/rescue</code> creates a RESCUE-role user and a linked <code>rescue_profiles</code> record. Organizations can optionally upload a logo for their profile page.</div>
+          <div class="feature-fields">
+            <div class="feature-fields-label">Form Fields</div>
+            <div class="field-chips">
+              <span class="field-chip rescue">Org Name</span>
+              <span class="field-chip rescue">Email</span>
+              <span class="field-chip rescue">Phone</span>
+              <span class="field-chip rescue">City / Province</span>
+              <span class="field-chip rescue">Website (optional)</span>
+              <span class="field-chip rescue">Logo Upload</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="feature-item rescue">
+          <div class="feature-name">Post Details of Pet for Fostering</div>
+          <div class="feature-desc">A multi-step form at <code>/dashboard/rescue/pets/new</code> walks rescue staff through creating a complete pet profile. The pet record is linked to the rescue and immediately visible on the public browse page upon completion.</div>
+          <div class="feature-fields">
+            <div class="feature-fields-label">Multi-Step Form Sections</div>
+            <div class="field-chips">
+              <span class="field-chip rescue">Basic Info</span>
+              <span class="field-chip rescue">Health Status</span>
+              <span class="field-chip rescue">Personality &amp; Needs</span>
+              <span class="field-chip rescue">Availability</span>
+              <span class="field-chip rescue">Photos</span>
+              <span class="field-chip rescue">Location</span>
+              <span class="field-chip rescue">Contact Info</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="feature-item rescue">
+          <div class="feature-name">Upload Pet Photos</div>
+          <div class="feature-desc">Drag-and-drop photo uploader (react-dropzone) that sends images to Cloudinary or S3. Up to 10 photos per pet. The first photo is set as the primary image for listing cards. Images are stored in a <code>pet_photos</code> table with URLs and an <code>is_primary</code> flag.</div>
+          <div class="feature-fields">
+            <div class="feature-fields-label">Implementation</div>
+            <div class="field-chips">
+              <span class="field-chip rescue">react-dropzone</span>
+              <span class="field-chip rescue">Cloudinary / S3</span>
+              <span class="field-chip rescue">Up to 10 images</span>
+              <span class="field-chip rescue">Primary photo flag</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="feature-item rescue">
+          <div class="feature-name">Detailed Pet Info (Age, Breed, Training, Location)</div>
+          <div class="feature-desc">Structured fields ensure every listing is rich and searchable. Location is stored at city-level for privacy. All fields populate the searchable filter system on the public browse page.</div>
+          <div class="feature-fields">
+            <div class="feature-fields-label">Key Fields</div>
+            <div class="field-chips">
+              <span class="field-chip rescue">Age</span>
+              <span class="field-chip rescue">Breed</span>
+              <span class="field-chip rescue">House Trained?</span>
+              <span class="field-chip rescue">Spay / Neuter Status</span>
+              <span class="field-chip rescue">Vaccinated?</span>
+              <span class="field-chip rescue">Good w/ Kids / Dogs / Cats</span>
+              <span class="field-chip rescue">City (no street address)</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="feature-item rescue">
+          <div class="feature-name">Post Availability Date</div>
+          <div class="feature-desc">Each pet listing includes a "available from" date. An optional "urgent by" field can flag animals with an urgent placement deadline, surfacing them prominently in search results.</div>
+          <div class="feature-fields">
+            <div class="feature-fields-label">Fields</div>
+            <div class="field-chips">
+              <span class="field-chip rescue">Available From (date)</span>
+              <span class="field-chip rescue">Urgent By (optional)</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="feature-item rescue">
+          <div class="feature-name">Rescue Contact Info on Listing</div>
+          <div class="feature-desc">Each pet listing displays the rescue organization's name, city, and a "Contact Rescue" button. Contact details are surfaced after a match or request is initiated, protecting inbox integrity.</div>
+          <div class="feature-fields">
+            <div class="feature-fields-label">Displayed On Listing</div>
+            <div class="field-chips">
+              <span class="field-chip rescue">Org Name</span>
+              <span class="field-chip rescue">City / Region</span>
+              <span class="field-chip rescue">Logo</span>
+              <span class="field-chip rescue">Contact Button</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Matching Panel -->
+    <div class="feature-panel" id="panel-matching">
+      <div class="feature-list">
+
+        <div class="feature-item matching">
+          <div class="feature-name">Foster Selects a Pet &amp; Sends Request</div>
+          <div class="feature-desc">On a pet's detail page, a logged-in foster clicks "I'm Interested in Fostering [Name]." The system checks that the foster's profile is complete before allowing the request. A <code>foster_requests</code> record is created with PENDING status and the rescue receives an email notification.</div>
+          <div class="feature-fields">
+            <div class="feature-fields-label">Flow</div>
+            <div class="field-chips">
+              <span class="field-chip matching">Pet Detail Page CTA</span>
+              <span class="field-chip matching">Profile Completeness Check</span>
+              <span class="field-chip matching">foster_requests record</span>
+              <span class="field-chip matching">Email to Rescue</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="feature-item matching">
+          <div class="feature-name">Rescue Reaches Out to a Foster</div>
+          <div class="feature-desc">Rescues can browse a filtered list of foster profiles at <code>/fosters</code> (filtering by availability, location, home type, and pet preferences). They can click "Reach Out" to send a message to a specific foster about a specific pet. Creates a <code>rescue_outreach</code> record and notifies the foster by email.</div>
+          <div class="feature-fields">
+            <div class="feature-fields-label">Flow</div>
+            <div class="field-chips">
+              <span class="field-chip matching">Foster Browse + Filters</span>
+              <span class="field-chip matching">Reach Out Button</span>
+              <span class="field-chip matching">rescue_outreach record</span>
+              <span class="field-chip matching">Email to Foster</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="feature-item matching">
+          <div class="feature-name">Foster Submits Application Form</div>
+          <div class="feature-desc">After initial interest is expressed (either direction), the foster completes a formal application at <code>/apply/[pet_id]</code>. The rescue can then Accept, Decline, or Request More Info. Status updates trigger email notifications to the foster at each stage.</div>
+          <div class="feature-fields">
+            <div class="feature-fields-label">Application Fields</div>
+            <div class="field-chips">
+              <span class="field-chip matching">Motivation / Why This Pet</span>
+              <span class="field-chip matching">Daily Schedule</span>
+              <span class="field-chip matching">Vet Reference</span>
+              <span class="field-chip matching">Personal Reference</span>
+              <span class="field-chip matching">Terms Agreement</span>
+              <span class="field-chip matching">Digital Signature</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DATABASE -->
+<section id="schema">
+  <div class="container">
+    <div class="section-label">04 — Database</div>
+    <h2 class="section-title">Core schema tables</h2>
+    <p class="section-desc">PostgreSQL via Prisma ORM. All personal contact info is protected and never exposed publicly without a match.</p>
+    <div class="schema-grid">
+
+      <div class="schema-table">
+        <div class="schema-header">users <span>all roles</span></div>
+        <div class="schema-fields">
+          <div class="schema-field"><span class="field-name">id</span><span class="field-type">UUID PK</span></div>
+          <div class="schema-field"><span class="field-name">email</span><span class="field-type">VARCHAR UNIQUE</span></div>
+          <div class="schema-field"><span class="field-name">password_hash</span><span class="field-type">VARCHAR</span></div>
+          <div class="schema-field"><span class="field-name">role</span><span class="field-type">ENUM</span></div>
+          <div class="schema-field"><span class="field-name">email_verified</span><span class="field-type">BOOLEAN</span></div>
+          <div class="schema-field"><span class="field-name">created_at</span><span class="field-type">TIMESTAMP</span></div>
+        </div>
+      </div>
+
+      <div class="schema-table">
+        <div class="schema-header">foster_profiles <span>FK → users</span></div>
+        <div class="schema-fields">
+          <div class="schema-field"><span class="field-name">full_name, phone</span><span class="field-type">VARCHAR</span></div>
+          <div class="schema-field"><span class="field-name">city, province, postal</span><span class="field-type">VARCHAR</span></div>
+          <div class="schema-field"><span class="field-name">home_setup</span><span class="field-type">JSONB</span></div>
+          <div class="schema-field"><span class="field-name">preferences</span><span class="field-type">JSONB</span></div>
+          <div class="schema-field"><span class="field-name">available_from</span><span class="field-type">DATE</span></div>
+          <div class="schema-field"><span class="field-name">available_until</span><span class="field-type">DATE</span></div>
+          <div class="schema-field"><span class="field-name">reminder_frequency</span><span class="field-type">VARCHAR</span></div>
+          <div class="schema-field"><span class="field-name">reminder_next_send</span><span class="field-type">DATE</span></div>
+        </div>
+      </div>
+
+      <div class="schema-table">
+        <div class="schema-header">rescue_profiles <span>FK → users</span></div>
+        <div class="schema-fields">
+          <div class="schema-field"><span class="field-name">org_name</span><span class="field-type">VARCHAR</span></div>
+          <div class="schema-field"><span class="field-name">phone, city, province</span><span class="field-type">VARCHAR</span></div>
+          <div class="schema-field"><span class="field-name">website, contact_email</span><span class="field-type">VARCHAR</span></div>
+          <div class="schema-field"><span class="field-name">logo_url</span><span class="field-type">VARCHAR</span></div>
+          <div class="schema-field"><span class="field-name">address</span><span class="field-type">VARCHAR</span></div>
+        </div>
+      </div>
+
+      <div class="schema-table">
+        <div class="schema-header">pets <span>FK → rescue_profiles</span></div>
+        <div class="schema-fields">
+          <div class="schema-field"><span class="field-name">name, species, breed</span><span class="field-type">VARCHAR</span></div>
+          <div class="schema-field"><span class="field-name">age_years, sex, weight</span><span class="field-type">NUMERIC</span></div>
+          <div class="schema-field"><span class="field-name">house_trained, spayed, vaccinated</span><span class="field-type">BOOLEAN</span></div>
+          <div class="schema-field"><span class="field-name">good_with_kids/dogs/cats</span><span class="field-type">BOOLEAN</span></div>
+          <div class="schema-field"><span class="field-name">special_needs, bio</span><span class="field-type">TEXT</span></div>
+          <div class="schema-field"><span class="field-name">available_from, urgent_by</span><span class="field-type">DATE</span></div>
+          <div class="schema-field"><span class="field-name">city, province</span><span class="field-type">VARCHAR</span></div>
+          <div class="schema-field"><span class="field-name">status</span><span class="field-type">ENUM</span></div>
+        </div>
+      </div>
+
+      <div class="schema-table">
+        <div class="schema-header">applications <span>FK → foster, pet, rescue</span></div>
+        <div class="schema-fields">
+          <div class="schema-field"><span class="field-name">motivation</span><span class="field-type">TEXT</span></div>
+          <div class="schema-field"><span class="field-name">daily_schedule</span><span class="field-type">TEXT</span></div>
+          <div class="schema-field"><span class="field-name">vet_reference</span><span class="field-type">JSONB</span></div>
+          <div class="schema-field"><span class="field-name">personal_reference</span><span class="field-type">JSONB</span></div>
+          <div class="schema-field"><span class="field-name">agreed_to_terms</span><span class="field-type">BOOLEAN</span></div>
+          <div class="schema-field"><span class="field-name">signature</span><span class="field-type">TEXT</span></div>
+          <div class="schema-field"><span class="field-name">status</span><span class="field-type">ENUM</span></div>
+          <div class="schema-field"><span class="field-name">created_at, reviewed_at</span><span class="field-type">TIMESTAMP</span></div>
+        </div>
+      </div>
+
+      <div class="schema-table">
+        <div class="schema-header">foster_requests / rescue_outreach</div>
+        <div class="schema-fields">
+          <div class="schema-field"><span class="field-name">foster_id</span><span class="field-type">UUID FK</span></div>
+          <div class="schema-field"><span class="field-name">pet_id</span><span class="field-type">UUID FK</span></div>
+          <div class="schema-field"><span class="field-name">rescue_id</span><span class="field-type">UUID FK</span></div>
+          <div class="schema-field"><span class="field-name">message</span><span class="field-type">TEXT</span></div>
+          <div class="schema-field"><span class="field-name">status</span><span class="field-type">ENUM</span></div>
+          <div class="schema-field"><span class="field-name">created_at</span><span class="field-type">TIMESTAMP</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ROUTES -->
+<section id="routes">
+  <div class="container">
+    <div class="section-label">05 — Routes</div>
+    <h2 class="section-title">Page structure &amp; access control</h2>
+    <p class="section-desc">All routes follow Next.js App Router conventions. Protected routes redirect to <code>/login</code> if unauthenticated.</p>
+    <div style="border-radius:12px; overflow:hidden; border: 1px solid var(--border);">
+    <table class="routes-table">
+      <thead>
+        <tr><th>Route</th><th>Description</th><th>Access</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><span class="route-path">/</span></td><td>Marketing homepage</td><td><span class="route-badge badge-public">Public</span></td></tr>
+        <tr><td><span class="route-path">/register/foster</span></td><td>Foster sign-up flow</td><td><span class="route-badge badge-public">Public</span></td></tr>
+        <tr><td><span class="route-path">/register/rescue</span></td><td>Rescue org sign-up flow</td><td><span class="route-badge badge-public">Public</span></td></tr>
+        <tr><td><span class="route-path">/pets</span></td><td>Browse pets available for fostering</td><td><span class="route-badge badge-foster">Foster</span></td></tr>
+        <tr><td><span class="route-path">/pets/[id]</span></td><td>Pet detail + "I'm Interested" CTA</td><td><span class="route-badge badge-foster">Foster</span></td></tr>
+        <tr><td><span class="route-path">/apply/[pet_id]</span></td><td>Formal foster application form</td><td><span class="route-badge badge-foster">Foster</span></td></tr>
+        <tr><td><span class="route-path">/dashboard/foster</span></td><td>Foster dashboard overview</td><td><span class="route-badge badge-foster">Foster</span></td></tr>
+        <tr><td><span class="route-path">/dashboard/foster/profile</span></td><td>Edit foster profile</td><td><span class="route-badge badge-foster">Foster</span></td></tr>
+        <tr><td><span class="route-path">/dashboard/foster/applications</span></td><td>Track application statuses</td><td><span class="route-badge badge-foster">Foster</span></td></tr>
+        <tr><td><span class="route-path">/fosters</span></td><td>Browse foster profiles</td><td><span class="route-badge badge-rescue">Rescue</span></td></tr>
+        <tr><td><span class="route-path">/fosters/[id]</span></td><td>Foster profile + "Reach Out" CTA</td><td><span class="route-badge badge-rescue">Rescue</span></td></tr>
+        <tr><td><span class="route-path">/dashboard/rescue</span></td><td>Rescue dashboard overview</td><td><span class="route-badge badge-rescue">Rescue</span></td></tr>
+        <tr><td><span class="route-path">/dashboard/rescue/pets/new</span></td><td>Post a new pet (multi-step form)</td><td><span class="route-badge badge-rescue">Rescue</span></td></tr>
+        <tr><td><span class="route-path">/dashboard/rescue/applications</span></td><td>Review incoming foster applications</td><td><span class="route-badge badge-rescue">Rescue</span></td></tr>
+        <tr><td><span class="route-path">/admin</span></td><td>Admin panel: users, moderation</td><td><span class="route-badge badge-admin">Admin</span></td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+</section>
+
+<!-- PHASES -->
+<section id="phases">
+  <div class="container">
+    <div class="section-label">06 — Timeline</div>
+    <h2 class="section-title">Implementation phases</h2>
+    <p class="section-desc">A 12-week rollout broken into 5 focused phases, from scaffolding to launch.</p>
+    <div class="phases">
+
+      <div class="phase-item">
+        <div class="phase-dot">1</div>
+        <div class="phase-content">
+          <div class="phase-title">Foundation</div>
+          <div class="phase-weeks">Weeks 1–3</div>
+          <ul class="phase-tasks">
+            <li class="phase-task">Project scaffolding: Next.js, Tailwind, Prisma, PostgreSQL</li>
+            <li class="phase-task">Auth system: registration, login, email verification, role assignment</li>
+            <li class="phase-task">Foster registration form and profile storage</li>
+            <li class="phase-task">Rescue registration form and profile storage</li>
+            <li class="phase-task">Navigation, layout, dashboard shells</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="phase-item">
+        <div class="phase-dot p2">2</div>
+        <div class="phase-content">
+          <div class="phase-title">Core Features</div>
+          <div class="phase-weeks">Weeks 4–6</div>
+          <ul class="phase-tasks">
+            <li class="phase-task">Multi-step pet posting form with photo upload (Cloudinary/S3)</li>
+            <li class="phase-task">Pet browse page with search and filters</li>
+            <li class="phase-task">Pet detail page</li>
+            <li class="phase-task">Foster profile browse page (rescue-facing)</li>
+            <li class="phase-task">Foster profile detail page</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="phase-item">
+        <div class="phase-dot p3">3</div>
+        <div class="phase-content">
+          <div class="phase-title">Matching &amp; Applications</div>
+          <div class="phase-weeks">Weeks 7–9</div>
+          <ul class="phase-tasks">
+            <li class="phase-task">Foster "I'm Interested" request flow with profile completeness gate</li>
+            <li class="phase-task">Rescue "Reach Out to Foster" flow</li>
+            <li class="phase-task">Email notifications for all match actions (Resend/SendGrid)</li>
+            <li class="phase-task">Formal application form (foster → rescue)</li>
+            <li class="phase-task">Application status tracking on both dashboards</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="phase-item">
+        <div class="phase-dot p4">4</div>
+        <div class="phase-content">
+          <div class="phase-title">Reminders &amp; Polish</div>
+          <div class="phase-weeks">Weeks 10–11</div>
+          <ul class="phase-tasks">
+            <li class="phase-task">Cron job for availability reminder emails</li>
+            <li class="phase-task">Reminder frequency settings in foster profile dashboard</li>
+            <li class="phase-task">Mobile responsive design review across all pages</li>
+            <li class="phase-task">Accessibility audit (WCAG 2.1 AA)</li>
+            <li class="phase-task">Error states, empty states, and loading skeletons</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="phase-item">
+        <div class="phase-dot p5">5</div>
+        <div class="phase-content">
+          <div class="phase-title">Testing &amp; Launch</div>
+          <div class="phase-weeks">Week 12</div>
+          <ul class="phase-tasks">
+            <li class="phase-task">End-to-end tests: Playwright or Cypress for critical flows</li>
+            <li class="phase-task">Unit tests for API routes and matching logic</li>
+            <li class="phase-task">Staging environment QA with real test data</li>
+            <li class="phase-task">Production deploy to Vercel + Railway</li>
+            <li class="phase-task">Analytics setup: PostHog or Plausible</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- V2 -->
+<section id="v2">
+  <div class="container">
+    <div class="section-label">07 — Future</div>
+    <h2 class="section-title">V2 enhancements</h2>
+    <p class="section-desc">Features to consider after launch based on user feedback and platform growth.</p>
+    <div class="stack-grid">
+      <div class="stack-card"><div class="stack-layer">Communication</div><div class="stack-tech">In-App Messaging</div><div class="stack-reason">Threaded messages between fosters and rescues after a match</div></div>
+      <div class="stack-card"><div class="stack-layer">Trust</div><div class="stack-tech">Foster Reviews</div><div class="stack-reason">Rescue orgs can leave ratings after a foster cycle completes</div></div>
+      <div class="stack-card"><div class="stack-layer">Intelligence</div><div class="stack-tech">Compatibility Matching</div><div class="stack-reason">Algorithm scores pet-to-foster fit based on profile data</div></div>
+      <div class="stack-card"><div class="stack-layer">Notifications</div><div class="stack-tech">SMS Reminders</div><div class="stack-reason">Twilio-powered SMS availability reminders alongside email</div></div>
+      <div class="stack-card"><div class="stack-layer">Calendar</div><div class="stack-tech">Calendar Sync</div><div class="stack-reason">Fosters sync availability with Google Calendar / iCal</div></div>
+      <div class="stack-card"><div class="stack-layer">Mobile</div><div class="stack-tech">React Native App</div><div class="stack-reason">Native iOS/Android apps for on-the-go browsing and updates</div></div>
+      <div class="stack-card"><div class="stack-layer">Community</div><div class="stack-tech">Success Stories</div><div class="stack-reason">Public blog-style posts celebrating successful foster stories</div></div>
+      <div class="stack-card"><div class="stack-layer">Fundraising</div><div class="stack-tech">Donation Features</div><div class="stack-reason">Stripe-powered donations for rescue organizations</div></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <strong>Foster A Wag</strong> — Implementation Plan · Prepared June 2026
+</footer>
+
+<script>
+  function scrollTo(id) {
+    document.getElementById(id).scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.querySelectorAll('.nav-pill').forEach(p => p.classList.remove('active'));
+    event.target.classList.add('active');
+  }
+
+  function showCat(cat, btn) {
+    document.querySelectorAll('.feature-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-' + cat).classList.add('active');
+    document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  // Highlight nav pill on scroll
+  const sections = ['overview','stack','features','schema','routes','phases','v2'];
+  const pills = document.querySelectorAll('.nav-pill');
+  window.addEventListener('scroll', () => {
+    let current = 'overview';
+    sections.forEach(id => {
+      const el = document.getElementById(id);
+      if (el && window.scrollY >= el.offsetTop - 100) current = id;
+    });
+    pills.forEach((p, i) => {
+      p.classList.toggle('active', sections[i] === current);
+    });
+  });
+</script>
+</body>
+</html>
