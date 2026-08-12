@@ -34,10 +34,15 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
-# Migrations ship with the image so a Cloud Run job can apply them using this
-# exact build: `node scripts/migrate.mjs`.
+# Migrations and admin creation ship with the image so Cloud Run jobs can run
+# them against this exact build:
+#   node scripts/migrate.mjs
+#   node scripts/create-admin.mjs you@example.com
+# load-env.mjs is imported by both — omitting it breaks them at runtime.
 COPY --from=builder --chown=nextjs:nodejs /app/migrations ./migrations
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/migrate.mjs ./scripts/migrate.mjs
+COPY --from=builder --chown=nextjs:nodejs /app/scripts/create-admin.mjs ./scripts/create-admin.mjs
+COPY --from=builder --chown=nextjs:nodejs /app/scripts/load-env.mjs ./scripts/load-env.mjs
 
 USER nextjs
 

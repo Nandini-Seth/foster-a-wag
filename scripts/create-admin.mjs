@@ -1,31 +1,34 @@
 /**
  * Creates an ACTIVE admin account.
  *
+ * Locally:
  *   npm run create-admin -- admin@yourdomain.com
- *
- * By default the password is generated and printed once. To set a specific one,
- * pass it through the environment rather than as an argument, so it does not end
- * up in the process list:
- *
  *   ADMIN_PASSWORD='...' npm run create-admin -- admin@yourdomain.com
  *
- * Admins bypass the foster/rescue review sequence — they are created ACTIVE and
- * can sign in immediately.
+ * In production, as a Cloud Run job using the deployed image — no database
+ * proxy or local tooling needed:
+ *   gcloud run jobs execute create-admin --args=scripts/create-admin.mjs,you@example.com
  *
- * This replaces the old behaviour where lib/db.ts silently created
- * admin@fosterwag.com / admin1234 on any empty database.
+ * Plain JavaScript for the same reason as migrate.mjs: the runtime image has no
+ * TypeScript toolchain, only the modules the standalone build traced.
+ *
+ * Admins skip the foster/rescue review sequence — they are created ACTIVE.
  */
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
-import { v4 as uuidv4 } from 'uuid';
-import { Pool } from 'pg';
+import pg from 'pg';
 import { loadEnv } from './load-env.mjs';
+
+// crypto.randomUUID rather than the `uuid` package: Next bundles uuid into the
+// route chunks instead of leaving it in the standalone node_modules, so it is
+// not importable from a script running inside the runtime image.
 
 loadEnv();
 
+const { Pool } = pg;
 const MIN_PASSWORD_LENGTH = 8;
 
-function generatePassword(): string {
+function generatePassword() {
   // 24 base64url chars — no ambiguity about shell escaping when it gets pasted.
   return crypto.randomBytes(18).toString('base64url');
 }
@@ -33,7 +36,7 @@ function generatePassword(): string {
 async function main() {
   const email = process.argv[2]?.trim().toLowerCase();
   if (!email || !email.includes('@')) {
-    console.error('Usage: npm run create-admin -- <email>');
+    console.error('Usage: create-admin <email>   (password via ADMIN_PASSWORD, otherwise generated)');
     process.exit(1);
   }
 
@@ -64,7 +67,7 @@ async function main() {
     await pool.query(
       `INSERT INTO users (id, email, password_hash, role, email_verified, status, activated_at)
        VALUES ($1, $2, $3, 'ADMIN', true, 'ACTIVE', now())`,
-      [uuidv4(), email, hash]
+      [crypto.randomUUID(), email, hash]
     );
 
     console.log('\nAdmin account created and activated.\n');

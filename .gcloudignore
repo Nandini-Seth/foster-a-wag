@@ -1,0 +1,30 @@
+# What NOT to upload to Cloud Build. Without this file gcloud derives one from
+# .gitignore; being explicit keeps the upload small and predictable.
+
+.git
+.gitignore
+.dockerignore
+
+# Reinstalled and rebuilt inside the image — uploading these is slow and pointless.
+node_modules
+.next
+out
+build
+*.tsbuildinfo
+
+# Local-only state
+data
+public/uploads
+
+# Secrets never leave the machine
+.env
+.env.*
+!.env.example
+*-service-account.json
+gcp-key.json
+
+# Not needed to build or run
+files
+coverage
+.DS_Store
+docker-compose.yml

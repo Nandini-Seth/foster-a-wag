@@ -13,7 +13,7 @@
     "typecheck": "tsc --noEmit",
     "migrate": "node scripts/migrate.mjs",
     "seed": "tsx scripts/seed.ts",
-    "create-admin": "tsx scripts/create-admin.ts",
+    "create-admin": "node scripts/create-admin.mjs",
     "db:up": "docker compose up -d db",
     "db:down": "docker compose down"
   },
