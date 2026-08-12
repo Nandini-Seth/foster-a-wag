@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
+import PetPhoto from '@/components/PetPhoto';
 
 export default function ApplyPage({ params }: { params: { petId: string } }) {
   const router = useRouter();
@@ -17,8 +18,17 @@ export default function ApplyPage({ params }: { params: { petId: string } }) {
     agreedToTerms: false, signature: '',
   });
 
+  const [session, setSession] = useState<any>(null);
+
   useEffect(() => {
-    fetch(`/api/pets/${params.petId}`).then(r => r.json()).then(d => { setPet(d); setLoading(false); });
+    Promise.all([
+      fetch(`/api/pets/${params.petId}`).then(r => r.json()),
+      fetch('/api/auth/me').then(r => r.json()),
+    ]).then(([petData, sessionData]) => {
+      setPet(petData);
+      setSession(sessionData);
+      setLoading(false);
+    });
   }, [params.petId]);
 
   const update = (field: string, val: any) => setForm(f => ({...f, [field]: val}));
@@ -41,6 +51,55 @@ export default function ApplyPage({ params }: { params: { petId: string } }) {
 
   if (loading) return <><Navbar /><div className="py-20 text-center text-stone-400">Loading…</div></>;
 
+  // Reaching the form directly without an account: explain rather than 401 later.
+  if (session && !session.isLoggedIn) {
+    return (
+      <>
+        <Navbar />
+        <div className="max-w-lg mx-auto px-4 sm:px-6 py-16">
+          <div className="bg-white rounded-2xl border border-stone-100 shadow-sm p-8 text-center">
+            <div className="text-5xl mb-4" aria-hidden="true">🐾</div>
+            <h1 className="font-display text-3xl text-green-900">
+              Create an account to apply
+            </h1>
+            <p className="text-stone-500 mt-3 leading-relaxed">
+              {pet?.name ? `Applying to foster ${pet.name} needs a foster account. ` : 'Applying to foster needs a foster account. '}
+              It is free, and it lets the rescue see your home details and availability.
+            </p>
+            <div className="mt-7 flex flex-col gap-3">
+              <Link href={`/register/foster?next=${encodeURIComponent(`/apply/${params.petId}`)}`}
+                className="bg-green-800 hover:bg-green-700 text-white font-semibold py-3 rounded-xl transition-colors">
+                Create a foster account
+              </Link>
+              <Link href="/login"
+                className="border border-stone-200 hover:bg-stone-50 text-stone-700 font-semibold py-3 rounded-xl transition-colors">
+                Sign in
+              </Link>
+              <Link href={`/pets/${params.petId}`} className="text-sm text-stone-500 hover:text-amber-600 mt-1">
+                ← Back to {pet?.name || 'the pet'}
+              </Link>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  // Signed in, but not as a foster — only fosters can apply.
+  if (session?.isLoggedIn && session.role !== 'FOSTER') {
+    return (
+      <>
+        <Navbar />
+        <div className="max-w-lg mx-auto px-4 sm:px-6 py-16 text-center">
+          <p className="text-stone-500">Only foster accounts can apply to foster a pet.</p>
+          <Link href={`/pets/${params.petId}`} className="text-sm text-amber-600 hover:underline mt-3 inline-block">
+            ← Back to the pet
+          </Link>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <Navbar />
@@ -52,7 +111,7 @@ export default function ApplyPage({ params }: { params: { petId: string } }) {
         {/* Pet summary */}
         {pet && (
           <div className="bg-white rounded-2xl border border-stone-100 shadow-sm p-5 mb-8 flex gap-4">
-            {pet.primary_photo && <img src={pet.primary_photo} alt={pet.name} className="w-20 h-20 rounded-xl object-cover flex-shrink-0" />}
+            <PetPhoto src={pet.primary_photo} alt={pet.name} className="w-20 h-20 rounded-xl object-cover flex-shrink-0" />
             <div>
               <h2 className="font-display text-2xl text-green-900">Fostering {pet.name}</h2>
               <p className="text-stone-500 text-sm">{pet.breed || pet.species} · {pet.city}, {pet.province} · Posted by {pet.org_name}</p>

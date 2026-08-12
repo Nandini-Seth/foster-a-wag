@@ -26,29 +26,31 @@ export default function FosterRegisterPage() {
 
   const handleRegister = async () => {
     if (form.password !== form.confirmPassword) { setError("Passwords don't match"); return; }
+    if (form.password.length < 8) { setError('Password must be at least 8 characters'); return; }
     setLoading(true); setError('');
+
+    // Profile details go with the registration itself. Signing up no longer
+    // creates a session, so there is nothing to authenticate a follow-up call.
     const res = await fetch('/api/auth/register', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: form.email, password: form.password, role: 'FOSTER', fullName: form.fullName }),
+      body: JSON.stringify({
+        email: form.email, password: form.password, role: 'FOSTER', fullName: form.fullName,
+        profile: {
+          phone: form.phone, city: form.city,
+          province: form.province, postalCode: form.postalCode,
+          dwellingType: form.dwellingType, fencedBackyard: form.fencedBackyard,
+          numAdults: form.numAdults, numChildren: form.numChildren,
+          otherPets: form.otherAnimals ? [form.otherAnimals] : [],
+          availableFrom: form.availableFrom, preferences: form.preferences,
+          reminderFrequency: form.reminderFrequency,
+        },
+      }),
     });
     const data = await res.json();
     if (!res.ok) { setError(data.error); setLoading(false); return; }
 
-    // Save profile data
-    await fetch('/api/fosters/profile', {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        fullName: form.fullName, phone: form.phone, city: form.city,
-        province: form.province, postalCode: form.postalCode,
-        dwellingType: form.dwellingType, fencedBackyard: form.fencedBackyard,
-        numAdults: form.numAdults, numChildren: form.numChildren,
-        otherPets: form.otherAnimals ? [form.otherAnimals] : [],
-        availableFrom: form.availableFrom, preferences: form.preferences,
-        reminderFrequency: form.reminderFrequency,
-      }),
-    });
     setLoading(false);
-    router.push('/dashboard/foster?welcome=1');
+    router.push('/registration-received?role=foster');
   };
 
   const cx = "w-full border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400";

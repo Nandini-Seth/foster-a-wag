@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import getDb from '@/lib/db';
+import { queryAll } from '@/lib/db';
 import { getSession } from '@/lib/session';
 
 export async function GET(req: NextRequest) {
@@ -8,18 +8,24 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const db = getDb();
   const { searchParams } = new URL(req.url);
   const city = searchParams.get('city');
   const available = searchParams.get('available');
 
-  let query = `SELECT fp.*, u.email FROM foster_profiles fp JOIN users u ON fp.user_id = u.id WHERE fp.profile_complete = 1`;
+  let query = `
+    SELECT fp.*, u.email
+    FROM foster_profiles fp
+    JOIN users u ON fp.user_id = u.id
+    WHERE fp.profile_complete
+  `;
   const params: any[] = [];
 
-  if (city) { query += ` AND fp.city LIKE ?`; params.push(`%${city}%`); }
-  if (available === '1') { query += ` AND fp.available_from IS NOT NULL AND fp.available_from >= date('now')`; }
+  // ILIKE, not LIKE: Postgres string comparison is case-sensitive where SQLite's was not.
+  if (city) { params.push(`%${city}%`); query += ` AND fp.city ILIKE $${params.length}`; }
+  if (available === '1') { query += ` AND fp.available_from IS NOT NULL AND fp.available_from >= CURRENT_DATE`; }
 
   query += ` ORDER BY fp.available_from ASC`;
-  const fosters = db.prepare(query).all(...params);
+
+  const fosters = await queryAll(query, params);
   return NextResponse.json(fosters);
 }

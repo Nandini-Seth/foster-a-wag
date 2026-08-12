@@ -18,22 +18,26 @@ export default function RescueRegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (form.password !== form.confirmPassword) { setError("Passwords don't match"); return; }
+    if (form.password.length < 8) { setError('Password must be at least 8 characters'); return; }
     setLoading(true); setError('');
 
+    // Organization details go with the registration itself. Signing up no longer
+    // creates a session, so there is nothing to authenticate a follow-up call.
     const res = await fetch('/api/auth/register', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: form.email, password: form.password, role: 'RESCUE', orgName: form.orgName }),
+      body: JSON.stringify({
+        email: form.email, password: form.password, role: 'RESCUE', orgName: form.orgName,
+        profile: {
+          phone: form.phone, city: form.city, province: form.province,
+          website: form.website, contactEmail: form.email, address: form.address,
+        },
+      }),
     });
     const data = await res.json();
     if (!res.ok) { setError(data.error); setLoading(false); return; }
 
-    await fetch('/api/rescue/profile', {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ orgName: form.orgName, phone: form.phone, city: form.city, province: form.province, website: form.website, contactEmail: form.email, address: form.address }),
-    });
-
     setLoading(false);
-    router.push('/dashboard/rescue?welcome=1');
+    router.push('/registration-received?role=rescue');
   };
 
   const cx = "w-full border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-400";

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import Navbar from '@/components/Navbar';
+import PetCarousel from '@/components/PetCarousel';
 
 export default function Home() {
   return (
@@ -27,9 +28,12 @@ export default function Home() {
             </div>
           </div>
           <div className="flex-shrink-0">
-            <div className="w-64 h-64 md:w-80 md:h-80 bg-white/10 rounded-full flex items-center justify-center shadow-2xl ring-4 ring-white/20">
-              <Image src="/logo.jpeg" alt="Foster A Wag" width={300} height={300} className="rounded-full object-cover w-56 h-56 md:w-72 md:h-72" />
-            </div>
+            <PetCarousel />
+            <p className="mt-4 text-center text-sm text-green-200">
+              <Link href="/pets" className="font-semibold text-amber-300 hover:underline">
+                Browse all pets →
+              </Link>
+            </p>
           </div>
         </div>
       </section>

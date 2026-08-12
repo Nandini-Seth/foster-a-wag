@@ -1,17 +1,15 @@
 'use client';
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
+import PhotoUpload from '@/components/PhotoUpload';
 
 export default function NewPetPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [photoPreview, setPhotoPreview] = useState('');
-  const [uploading, setUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     name: '', species: 'Dog', breed: '', ageYears: '', sex: 'Unknown', weightKg: '',
     houseTrained: false, spayedNeutered: false, microchipped: false, vaccinated: false,
@@ -23,21 +21,6 @@ export default function NewPetPage() {
   });
 
   const update = (field: string, val: any) => setForm(f => ({...f, [field]: val}));
-
-  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setPhotoPreview(URL.createObjectURL(file));
-    setUploading(true);
-    const fd = new FormData();
-    fd.append('file', file);
-    fd.append('folder', 'pets');
-    const res = await fetch('/api/upload', { method: 'POST', body: fd });
-    const data = await res.json();
-    setUploading(false);
-    if (res.ok) update('primaryPhoto', data.url);
-    else setError(data.error || 'Upload failed');
-  };
 
   const handleSubmit = async () => {
     if (!form.name || !form.species) { setError('Name and species are required.'); return; }
@@ -130,42 +113,12 @@ export default function NewPetPage() {
                 <textarea rows={4} value={form.bio} onChange={e => update('bio', e.target.value)} placeholder="Tell potential fosters about this animal's personality, quirks, and what makes them special…"
                   className="w-full border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 resize-none" />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1">Pet Photo</label>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handlePhotoChange}
-                  className="hidden"
-                />
-                <div
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full border-2 border-dashed border-stone-200 rounded-xl cursor-pointer hover:border-green-400 transition-colors overflow-hidden"
-                >
-                  {photoPreview ? (
-                    <div className="relative h-40">
-                      <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
-                      {uploading && (
-                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white text-sm font-medium">
-                          Uploading…
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="h-32 flex flex-col items-center justify-center gap-2 text-stone-400">
-                      <span className="text-3xl">📷</span>
-                      <span className="text-sm">Click to upload a photo</span>
-                      <span className="text-xs">JPG, PNG, WebP up to 10MB</span>
-                    </div>
-                  )}
-                </div>
-                {photoPreview && !uploading && (
-                  <button type="button" onClick={() => fileInputRef.current?.click()} className="text-xs text-stone-400 hover:text-stone-600 mt-1">
-                    Change photo
-                  </button>
-                )}
-              </div>
+              <PhotoUpload
+                label="Pet Photo"
+                folder="pets"
+                value={form.primaryPhoto}
+                onChange={url => update('primaryPhoto', url)}
+              />
               <button onClick={() => setStep(2)} className="w-full bg-green-800 hover:bg-green-700 text-white font-semibold py-3 rounded-xl">
                 Next: Health & Personality →
               </button>

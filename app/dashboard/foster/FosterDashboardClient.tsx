@@ -3,6 +3,7 @@ import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import Navbar from '@/components/Navbar';
+import PetPhoto from '@/components/PetPhoto';
 
 export default function FosterDashboardClient() {
   const [data, setData] = useState<any>(null);
@@ -273,7 +274,7 @@ export default function FosterDashboardClient() {
               {apps.map((app: any) => (
                 <div key={app.id} className="flex items-center gap-4 bg-white border border-stone-100 rounded-2xl p-4 shadow-sm hover:bg-stone-50">
                   {app.primary_photo ? (
-                    <img src={app.primary_photo} alt={app.pet_name} className="w-14 h-14 rounded-xl object-cover flex-shrink-0" />
+                    <PetPhoto src={app.primary_photo} alt={app.pet_name} className="w-14 h-14 rounded-xl object-cover flex-shrink-0" />
                   ) : (
                     <div className="w-14 h-14 rounded-xl bg-stone-100 flex items-center justify-center text-2xl flex-shrink-0">🐾</div>
                   )}

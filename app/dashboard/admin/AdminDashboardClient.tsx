@@ -2,19 +2,36 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
+import PetPhoto from '@/components/PetPhoto';
 
-const verifyColors: Record<number, string> = {
-  0: 'bg-yellow-100 text-yellow-700',
-  1: 'bg-green-100 text-green-700',
-  [-1]: 'bg-red-100 text-red-700',
+// The account review sequence. Only ACTIVE accounts can sign in.
+const statusColors: Record<string, string> = {
+  PENDING: 'bg-yellow-100 text-yellow-700',
+  INFO_REQUESTED: 'bg-orange-100 text-orange-700',
+  INFO_RECEIVED: 'bg-blue-100 text-blue-700',
+  ACTIVE: 'bg-green-100 text-green-700',
+  REJECTED: 'bg-red-100 text-red-700',
 };
-const verifyLabels: Record<number, string> = { 0: 'Pending', 1: 'Verified', [-1]: 'Rejected' };
+
+const statusLabels: Record<string, string> = {
+  PENDING: '1. Pending review',
+  INFO_REQUESTED: '2. Awaiting their reply',
+  INFO_RECEIVED: '3. Ready to approve',
+  ACTIVE: '✅ Active',
+  REJECTED: '❌ Rejected',
+};
+
+// The single action that moves an account to its next step.
+const nextStep: Record<string, { to: string; label: string } | undefined> = {
+  PENDING: { to: 'INFO_REQUESTED', label: '📧 I emailed them' },
+  INFO_REQUESTED: { to: 'INFO_RECEIVED', label: '📥 They replied' },
+  INFO_RECEIVED: { to: 'ACTIVE', label: '🎉 Approve & activate' },
+};
 
 const petStatusColors: Record<string, string> = {
-  AVAILABLE: 'bg-green-100 text-green-700',
-  IN_FOSTER: 'bg-blue-100 text-blue-700',
-  ADOPTED: 'bg-purple-100 text-purple-700',
-  INACTIVE: 'bg-stone-100 text-stone-500',
+  ACTIVE: 'bg-green-100 text-green-700',
+  PENDING: 'bg-amber-100 text-amber-800',
+  DELETED: 'bg-stone-200 text-stone-500',
 };
 
 export default function AdminDashboardClient() {
@@ -22,7 +39,7 @@ export default function AdminDashboardClient() {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<'users' | 'pets'>('users');
   const [userFilter, setUserFilter] = useState<'ALL' | 'FOSTER' | 'RESCUE'>('ALL');
-  const [verifyFilter, setVerifyFilter] = useState<'all' | 'pending' | 'verified' | 'rejected'>('all');
+  const [verifyFilter, setVerifyFilter] = useState<'all' | 'needsAction' | 'active' | 'rejected'>('all');
   const [acting, setActing] = useState<string | null>(null);
 
   const refresh = () =>
@@ -30,11 +47,11 @@ export default function AdminDashboardClient() {
 
   useEffect(() => { refresh(); }, []);
 
-  const verifyUser = async (userId: string, value: number) => {
+  const setStatus = async (userId: string, status: string) => {
     setActing(userId);
     await fetch(`/api/admin/users/${userId}`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ adminVerified: value }),
+      body: JSON.stringify({ status }),
     });
     await refresh();
     setActing(null);
@@ -77,10 +94,10 @@ export default function AdminDashboardClient() {
   const filteredUsers = allUsers
     .filter(u => userFilter === 'ALL' || u.role === userFilter)
     .filter(u => {
-      const v = u.admin_verified ?? 0;
-      if (verifyFilter === 'pending') return v === 0;
-      if (verifyFilter === 'verified') return v === 1;
-      if (verifyFilter === 'rejected') return v === -1;
+      const s = u.status ?? 'PENDING';
+      if (verifyFilter === 'needsAction') return !['ACTIVE', 'REJECTED'].includes(s);
+      if (verifyFilter === 'active') return s === 'ACTIVE';
+      if (verifyFilter === 'rejected') return s === 'REJECTED';
       return true;
     });
 
@@ -96,10 +113,10 @@ export default function AdminDashboardClient() {
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
           {[
+            ['Awaiting Approval', stats.pendingVerification, '⏳'],
+            ['Ready to Approve', stats.readyToApprove, '📥'],
+            ['Active Accounts', stats.verified, '✅'],
             ['Total Users', stats.totalUsers, '👥'],
-            ['Pending Verification', stats.pendingVerification, '⏳'],
-            ['Total Fosters', stats.totalFosters, '🏠'],
-            ['Total Rescues', stats.totalRescues, '🏢'],
           ].map(([lbl, val, icon]) => (
             <div key={lbl as string} className="bg-white rounded-2xl border border-stone-100 p-5 text-center shadow-sm">
               <div className="text-2xl mb-1">{icon}</div>
@@ -139,7 +156,7 @@ export default function AdminDashboardClient() {
                 ))}
               </div>
               <div className="flex gap-1 bg-stone-100 rounded-lg p-1">
-                {([['all', 'All'], ['pending', '⏳ Pending'], ['verified', '✅ Verified'], ['rejected', '❌ Rejected']] as const).map(([f, lbl]) => (
+                {([['all', 'All'], ['needsAction', '⏳ Needs action'], ['active', '✅ Active'], ['rejected', '❌ Rejected']] as const).map(([f, lbl]) => (
                   <button key={f} onClick={() => setVerifyFilter(f)}
                     className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${verifyFilter === f ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-700'}`}>
                     {lbl}
@@ -156,7 +173,8 @@ export default function AdminDashboardClient() {
             ) : (
               <div className="space-y-3">
                 {filteredUsers.map((user: any) => {
-                  const verified = user.admin_verified ?? 0;
+                  const status = user.status ?? 'PENDING';
+                  const step = nextStep[status];
                   const name = user.role === 'RESCUE' ? user.org_name : user.full_name;
                   const city = user.role === 'RESCUE' ? user.rescue_city : user.foster_city;
                   const province = user.role === 'RESCUE' ? user.rescue_province : user.foster_province;
@@ -170,9 +188,12 @@ export default function AdminDashboardClient() {
                             <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${user.role === 'RESCUE' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>
                               {user.role}
                             </span>
-                            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${verifyColors[verified] || verifyColors[0]}`}>
-                              {verifyLabels[verified] || 'Pending'}
+                            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${statusColors[status] || statusColors.PENDING}`}>
+                              {statusLabels[status] || status}
                             </span>
+                            {user.email_verified && (
+                              <span className="text-xs text-stone-400">email verified</span>
+                            )}
                           </div>
                           <p className="font-semibold text-stone-800 mt-2">{name || '(No name yet)'}</p>
                           <p className="text-stone-500 text-sm">{user.email}</p>
@@ -184,23 +205,33 @@ export default function AdminDashboardClient() {
                           {user.role === 'FOSTER' && (
                             <p className="text-stone-400 text-xs mt-0.5">Profile: {user.profile_complete ? '✅ Complete' : '⚠️ Incomplete'}</p>
                           )}
-                          <p className="text-stone-300 text-xs mt-1">Joined {new Date(user.created_at).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                          <p className="text-stone-300 text-xs mt-1">
+                            Joined {new Date(user.created_at).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' })}
+                            {user.info_requested_at && ` · emailed ${new Date(user.info_requested_at).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })}`}
+                          </p>
                         </div>
                         <div className="flex flex-wrap gap-2 items-start">
-                          {verified !== 1 && (
-                            <button onClick={() => verifyUser(user.id, 1)} disabled={acting === user.id}
+                          {step && (
+                            <button onClick={() => setStatus(user.id, step.to)} disabled={acting === user.id}
                               className="text-sm bg-green-600 hover:bg-green-500 text-white font-medium px-3 py-1.5 rounded-lg disabled:opacity-50">
-                              ✅ Verify
+                              {step.label}
                             </button>
                           )}
-                          {verified !== 0 && (
-                            <button onClick={() => verifyUser(user.id, 0)} disabled={acting === user.id}
+                          {status === 'ACTIVE' && (
+                            <button onClick={() => setStatus(user.id, 'PENDING')} disabled={acting === user.id}
+                              className="text-sm border border-stone-300 hover:bg-stone-50 text-stone-700 font-medium px-3 py-1.5 rounded-lg disabled:opacity-50"
+                              title="Revoke access and send this account back to review">
+                              Deactivate
+                            </button>
+                          )}
+                          {status !== 'PENDING' && status !== 'ACTIVE' && (
+                            <button onClick={() => setStatus(user.id, 'PENDING')} disabled={acting === user.id}
                               className="text-sm border border-yellow-300 hover:bg-yellow-50 text-yellow-700 font-medium px-3 py-1.5 rounded-lg disabled:opacity-50">
                               Reset
                             </button>
                           )}
-                          {verified !== -1 && (
-                            <button onClick={() => verifyUser(user.id, -1)} disabled={acting === user.id}
+                          {status !== 'REJECTED' && (
+                            <button onClick={() => setStatus(user.id, 'REJECTED')} disabled={acting === user.id}
                               className="text-sm border border-red-200 hover:bg-red-50 text-red-600 font-medium px-3 py-1.5 rounded-lg disabled:opacity-50">
                               ❌ Reject
                             </button>
@@ -238,11 +269,7 @@ export default function AdminDashboardClient() {
                 <div key={pet.id} className="bg-white rounded-2xl border border-stone-100 shadow-sm p-5">
                   <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
                     <div className="w-14 h-14 rounded-xl overflow-hidden bg-stone-100 flex-shrink-0">
-                      {pet.primary_photo ? (
-                        <img src={pet.primary_photo} alt={pet.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-2xl">🐾</div>
-                      )}
+                      <PetPhoto src={pet.primary_photo} alt={pet.name} className="w-full h-full object-cover" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -260,14 +287,14 @@ export default function AdminDashboardClient() {
                         className="text-sm border border-stone-200 hover:bg-stone-50 text-stone-600 font-medium px-3 py-1.5 rounded-lg">
                         View
                       </Link>
-                      {pet.status === 'AVAILABLE' && (
-                        <button onClick={() => updatePetStatus(pet.id, 'INACTIVE')} disabled={acting === pet.id}
+                      {pet.status === 'ACTIVE' && (
+                        <button onClick={() => updatePetStatus(pet.id, 'PENDING')} disabled={acting === pet.id}
                           className="text-sm border border-stone-200 hover:bg-stone-50 text-stone-600 font-medium px-3 py-1.5 rounded-lg disabled:opacity-50">
                           Deactivate
                         </button>
                       )}
-                      {pet.status === 'INACTIVE' && (
-                        <button onClick={() => updatePetStatus(pet.id, 'AVAILABLE')} disabled={acting === pet.id}
+                      {pet.status === 'PENDING' && (
+                        <button onClick={() => updatePetStatus(pet.id, 'ACTIVE')} disabled={acting === pet.id}
                           className="text-sm border border-green-200 hover:bg-green-50 text-green-700 font-medium px-3 py-1.5 rounded-lg disabled:opacity-50">
                           Reactivate
                         </button>

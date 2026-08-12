@@ -1,12 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
-import getDb from '@/lib/db';
-import { getSession } from '@/lib/session';
+import { queryOne, transaction } from '@/lib/db';
 
+const MIN_PASSWORD_LENGTH = 8;
+
+/**
+ * Creates an account in PENDING and stops there.
+ *
+ * No session is issued — registering does not grant access. An admin reviews the
+ * application, and only an ACTIVE account can sign in.
+ *
+ * Profile details arrive with this request rather than in a follow-up call,
+ * because the caller now has no session to authenticate that follow-up with.
+ */
 export async function POST(req: NextRequest) {
   try {
-    const { email, password, role, orgName, fullName } = await req.json();
+    const body = await req.json();
+    const { email, password, role, orgName, fullName, profile } = body;
 
     if (!email || !password || !role) {
       return NextResponse.json({ error: 'Email, password, and role are required' }, { status: 400 });
@@ -14,9 +25,16 @@ export async function POST(req: NextRequest) {
     if (!['FOSTER', 'RESCUE'].includes(role)) {
       return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
     }
+    if (typeof password !== 'string' || password.length < MIN_PASSWORD_LENGTH) {
+      return NextResponse.json(
+        { error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters` },
+        { status: 400 }
+      );
+    }
 
-    const db = getDb();
-    const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+    const normalizedEmail = String(email).trim().toLowerCase();
+
+    const existing = await queryOne('SELECT id FROM users WHERE email = $1', [normalizedEmail]);
     if (existing) {
       return NextResponse.json({ error: 'Email already registered' }, { status: 409 });
     }
@@ -24,27 +42,49 @@ export async function POST(req: NextRequest) {
     const userId = uuidv4();
     const profileId = uuidv4();
     const hash = await bcrypt.hash(password, 10);
+    const p = profile || {};
 
-    db.prepare('INSERT INTO users (id, email, password_hash, role, email_verified) VALUES (?, ?, ?, ?, 1)')
-      .run(userId, email, hash, role);
+    await transaction(async (client) => {
+      await client.query(
+        `INSERT INTO users (id, email, password_hash, role, email_verified, status)
+         VALUES ($1, $2, $3, $4, false, 'PENDING')`,
+        [userId, normalizedEmail, hash, role]
+      );
 
-    if (role === 'FOSTER') {
-      db.prepare('INSERT INTO foster_profiles (id, user_id, full_name) VALUES (?, ?, ?)').run(profileId, userId, fullName || '');
-    } else {
-      db.prepare('INSERT INTO rescue_profiles (id, user_id, org_name, contact_email) VALUES (?, ?, ?, ?)').run(profileId, userId, orgName || '', email);
-    }
+      if (role === 'FOSTER') {
+        const complete = !!(fullName && p.phone && p.city && p.dwellingType && p.availableFrom);
+        await client.query(
+          `INSERT INTO foster_profiles
+             (id, user_id, full_name, phone, city, province, postal_code, dwelling_type,
+              fenced_backyard, num_adults, num_children, other_pets, preferences,
+              available_from, reminder_frequency, profile_complete)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
+          [
+            profileId, userId, fullName || '', p.phone || null, p.city || null,
+            p.province || null, p.postalCode || null, p.dwellingType || null,
+            !!p.fencedBackyard, p.numAdults || 1, p.numChildren || 0,
+            JSON.stringify(p.otherPets || []),
+            JSON.stringify(p.preferences || {}),
+            p.availableFrom || null, p.reminderFrequency || 'monthly', complete,
+          ]
+        );
+      } else {
+        await client.query(
+          `INSERT INTO rescue_profiles
+             (id, user_id, org_name, phone, city, province, website, contact_email, address)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+          [
+            profileId, userId, orgName || '', p.phone || null, p.city || null,
+            p.province || null, p.website || null, p.contactEmail || normalizedEmail,
+            p.address || null,
+          ]
+        );
+      }
+    });
 
-    const session = await getSession();
-    session.userId = userId;
-    session.role = role;
-    session.email = email;
-    session.profileId = profileId;
-    session.isLoggedIn = true;
-    await session.save();
-
-    return NextResponse.json({ success: true, role, profileId });
-  } catch (err: any) {
+    return NextResponse.json({ success: true, status: 'PENDING', role });
+  } catch (err) {
     console.error('[/api/auth/register]', err);
-    return NextResponse.json({ error: 'Server error: ' + err.message }, { status: 500 });
+    return NextResponse.json({ error: 'Something went wrong. Please try again.' }, { status: 500 });
   }
 }

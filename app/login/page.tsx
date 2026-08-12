@@ -34,13 +34,6 @@ export default function LoginPage() {
             <p className="text-stone-500 text-sm mt-1">Sign in to your Foster A Wag account</p>
           </div>
 
-          <div className="bg-amber-50 rounded-xl p-4 mb-6 text-sm text-amber-800">
-            <strong>Demo accounts:</strong><br />
-            Foster: foster@demo.com / password123<br />
-            Rescue: rescue@demo.com / password123<br />
-            Admin: admin@fosterwag.com / admin1234
-          </div>
-
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-stone-700 mb-1">Email</label>

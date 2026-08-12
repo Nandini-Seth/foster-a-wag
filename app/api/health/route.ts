@@ -1,12 +1,18 @@
 import { NextResponse } from 'next/server';
-import getDb from '@/lib/db';
+import { queryOne } from '@/lib/db';
 
+// This route takes no request input, so Next would otherwise try to evaluate it
+// at build time — when there is no database to reach.
+export const dynamic = 'force-dynamic';
+
+// Cloud Run's startup and liveness probes hit this, so it has to actually reach
+// the database rather than just confirm the process is up.
 export async function GET() {
   try {
-    const db = getDb();
-    const result = db.prepare('SELECT COUNT(*) as count FROM users').get() as any;
-    return NextResponse.json({ ok: true, users: result.count });
-  } catch (err: any) {
-    return NextResponse.json({ ok: false, error: err.message }, { status: 500 });
+    await queryOne('SELECT 1');
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error('[/api/health]', err);
+    return NextResponse.json({ ok: false }, { status: 503 });
   }
 }

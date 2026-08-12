@@ -2,9 +2,12 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
+import PetPhoto from '@/components/PetPhoto';
+import { AvailableFromBadge } from '@/components/AvailableFrom';
 
 export default function PetsPage() {
   const [pets, setPets] = useState<any[]>([]);
+  const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({ species: '', city: '', goodWithKids: false, goodWithDogs: false, goodWithCats: false });
 
@@ -22,7 +25,10 @@ export default function PetsPage() {
     setLoading(false);
   };
 
-  useEffect(() => { fetchPets(); }, []);
+  useEffect(() => {
+    fetchPets();
+    fetch('/api/auth/me').then(r => r.json()).then(setSession).catch(() => setSession({ isLoggedIn: false }));
+  }, []);
 
   const speciesEmoji: Record<string, string> = { Dog: '🐶', Cat: '🐱', Bird: '🐦', Rabbit: '🐰', 'Small Animal': '🐹' };
 
@@ -34,6 +40,20 @@ export default function PetsPage() {
           <h1 className="font-display text-4xl text-green-900 mb-2">Find Your Temporary Companion</h1>
           <p className="text-stone-500">Browse animals looking for loving foster homes right now.</p>
         </div>
+
+        {/* Browsing is open to everyone; applying is what needs an account. */}
+        {session && !session.isLoggedIn && (
+          <div className="mb-8 flex flex-col sm:flex-row sm:items-center gap-4 rounded-2xl border border-green-200 bg-green-50 px-5 py-4">
+            <p className="flex-1 text-sm text-green-900">
+              <span className="font-semibold">Browsing as a guest.</span>{' '}
+              Look around as much as you like — you will need a free foster account when you are ready to apply.
+            </p>
+            <Link href="/register/foster"
+              className="flex-shrink-0 rounded-full bg-green-800 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-green-700">
+              Create an account
+            </Link>
+          </div>
+        )}
 
         {/* Filters */}
         <div className="bg-white rounded-2xl border border-stone-100 shadow-sm p-5 mb-8 flex flex-wrap gap-4 items-end">
@@ -84,13 +104,9 @@ export default function PetsPage() {
               <Link key={pet.id} href={`/pets/${pet.id}`}
                 className="bg-white rounded-2xl overflow-hidden shadow-sm border border-stone-100 hover:shadow-lg transition-all hover:-translate-y-0.5 group">
                 <div className="relative h-48 bg-stone-100 overflow-hidden">
-                  {pet.primary_photo ? (
-                    <img src={pet.primary_photo} alt={pet.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-6xl opacity-30">
-                      {speciesEmoji[pet.species] || '🐾'}
-                    </div>
-                  )}
+                  <PetPhoto src={pet.primary_photo} alt={pet.name}
+                    className="w-full h-full object-cover"
+                    imgClassName="group-hover:scale-105 transition-transform duration-300" />
                   <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 text-xs font-semibold text-stone-700">
                     {speciesEmoji[pet.species]} {pet.species}
                   </div>
@@ -102,6 +118,9 @@ export default function PetsPage() {
                     <span className="text-stone-400 text-sm">{pet.age_years}yr</span>
                   </div>
                   <p className="text-stone-500 text-sm mb-3">{pet.breed || pet.species} · {pet.sex} · {pet.city}, {pet.province}</p>
+                  <div className="mb-3">
+                    <AvailableFromBadge date={pet.available_from} />
+                  </div>
                   <p className="text-stone-600 text-sm line-clamp-2 mb-4">{pet.bio}</p>
                   <div className="flex flex-wrap gap-1.5">
                     {pet.house_trained ? <span className="bg-green-50 text-green-700 text-xs px-2.5 py-1 rounded-full font-medium">House trained</span> : null}

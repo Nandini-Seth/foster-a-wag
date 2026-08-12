@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import Navbar from '@/components/Navbar';
+import PetPhoto from '@/components/PetPhoto';
 
 export default function RescueDashboardClient() {
   const [data, setData] = useState<any>(null);
@@ -38,8 +39,9 @@ export default function RescueDashboardClient() {
     ACCEPTED:'bg-green-100 text-green-700', DECLINED:'bg-red-100 text-red-700',
   };
   const petStatusColors: Record<string,string> = {
-    AVAILABLE:'bg-green-100 text-green-700', IN_FOSTER:'bg-blue-100 text-blue-700',
-    ADOPTED:'bg-purple-100 text-purple-700', INACTIVE:'bg-stone-100 text-stone-500',
+    ACTIVE:'bg-green-100 text-green-700',
+    PENDING:'bg-amber-100 text-amber-800',
+    DELETED:'bg-stone-200 text-stone-500',
   };
 
   if (loading) return (
@@ -124,40 +126,52 @@ export default function RescueDashboardClient() {
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {pets.map((pet: any) => (
-                <div key={pet.id} className="bg-white rounded-2xl border border-stone-100 shadow-sm overflow-hidden">
+                <div key={pet.id}
+                  className={`bg-white rounded-2xl border shadow-sm overflow-hidden ${
+                    pet.status === 'DELETED' ? 'border-stone-200 opacity-60' : 'border-stone-100'
+                  }`}>
                   <div className="h-36 bg-stone-100 relative overflow-hidden">
-                    {pet.primary_photo ? (
-                      <img src={pet.primary_photo} alt={pet.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-4xl opacity-20">🐾</div>
-                    )}
-                    <span className={`absolute top-2 right-2 px-2.5 py-1 rounded-full text-xs font-bold ${petStatusColors[pet.status]}`}>
-                      {pet.status.replace('_',' ')}
+                    <PetPhoto src={pet.primary_photo} alt={pet.name}
+                      className={`w-full h-full object-cover ${pet.status === 'DELETED' ? 'grayscale' : ''}`} />
+                    <span className={`absolute top-2 right-2 px-2.5 py-1 rounded-full text-xs font-bold ${petStatusColors[pet.status] || petStatusColors.PENDING}`}>
+                      {pet.status === 'PENDING' ? '⏸ Pending' : pet.status === 'DELETED' ? '🗑 Deleted' : 'Active'}
                     </span>
                   </div>
                   <div className="p-4">
                     <p className="font-semibold text-stone-800">{pet.name}</p>
                     <p className="text-stone-400 text-xs">{pet.breed||pet.species} · {pet.age_years}yr · {pet.city}</p>
-                    <div className="flex gap-2 mt-3">
-                      <Link href={`/pets/${pet.id}`} className="flex-1 text-xs text-center border border-stone-200 hover:bg-stone-50 py-1.5 rounded-lg text-stone-600">
-                        View
-                      </Link>
-                      {pet.status === 'AVAILABLE' && (
-                        <button onClick={() => updatePetStatus(pet.id,'INACTIVE')}
-                          className="flex-1 text-xs border border-stone-200 hover:bg-stone-50 py-1.5 rounded-lg text-stone-600">
-                          Deactivate
-                        </button>
-                      )}
-                      {pet.status === 'INACTIVE' && (
-                        <button onClick={() => updatePetStatus(pet.id,'AVAILABLE')}
+                    {pet.status === 'PENDING' && (
+                      <p className="text-amber-700 text-xs mt-1.5">Hidden from the public — only you can see this.</p>
+                    )}
+                    {pet.status === 'DELETED' && (
+                      <p className="text-stone-400 text-xs mt-1.5">Deleted and locked. Restore it to edit.</p>
+                    )}
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {pet.status !== 'DELETED' ? (
+                        <>
+                          <Link href={`/rescue/pets/${pet.id}/edit`}
+                            className="flex-1 text-xs text-center bg-green-800 hover:bg-green-700 text-white py-1.5 rounded-lg">
+                            Edit
+                          </Link>
+                          <Link href={`/pets/${pet.id}`} className="flex-1 text-xs text-center border border-stone-200 hover:bg-stone-50 py-1.5 rounded-lg text-stone-600">
+                            View
+                          </Link>
+                          {pet.status === 'ACTIVE' ? (
+                            <button onClick={() => updatePetStatus(pet.id,'PENDING')}
+                              className="flex-1 text-xs border border-amber-300 hover:bg-amber-50 py-1.5 rounded-lg text-amber-800">
+                              Mark Pending
+                            </button>
+                          ) : (
+                            <button onClick={() => updatePetStatus(pet.id,'ACTIVE')}
+                              className="flex-1 text-xs border border-green-200 hover:bg-green-50 py-1.5 rounded-lg text-green-700">
+                              Make Active
+                            </button>
+                          )}
+                        </>
+                      ) : (
+                        <button onClick={() => updatePetStatus(pet.id,'ACTIVE')}
                           className="flex-1 text-xs border border-green-200 hover:bg-green-50 py-1.5 rounded-lg text-green-700">
-                          Reactivate
-                        </button>
-                      )}
-                      {pet.status === 'IN_FOSTER' && (
-                        <button onClick={() => updatePetStatus(pet.id,'ADOPTED')}
-                          className="flex-1 text-xs border border-purple-200 hover:bg-purple-50 py-1.5 rounded-lg text-purple-700">
-                          Adopted 🎉
+                          ♻️ Restore
                         </button>
                       )}
                     </div>
@@ -182,7 +196,7 @@ export default function RescueDashboardClient() {
                 <div key={app.id} className="bg-white rounded-2xl border border-stone-100 shadow-sm p-5">
                   <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                     {app.primary_photo && (
-                      <img src={app.primary_photo} alt={app.pet_name} className="w-16 h-16 rounded-xl object-cover flex-shrink-0" />
+                      <PetPhoto src={app.primary_photo} alt={app.pet_name} className="w-16 h-16 rounded-xl object-cover flex-shrink-0" />
                     )}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2 flex-wrap">

@@ -1,0 +1,25 @@
+node_modules
+.next
+out
+build
+*.tsbuildinfo
+
+# local-only state
+data
+public/uploads
+
+# secrets
+.env
+.env.*
+!.env.example
+*-service-account.json
+gcp-key.json
+
+.git
+.gitignore
+.DS_Store
+README.md
+files
+Dockerfile
+.dockerignore
+coverage
