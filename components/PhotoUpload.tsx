@@ -117,8 +117,10 @@ export default function PhotoUpload({
         } ${disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
       >
         {preview ? (
-          <div className="relative h-40">
-            <img src={preview} alt="Selected photo preview" className="h-full w-full object-cover" />
+          <div className="relative h-40 bg-white">
+            {/* object-contain matches how the photo will actually appear on the
+                post, so the preview is not a promise the listing breaks. */}
+            <img src={preview} alt="Selected photo preview" className="h-full w-full object-contain" />
             {uploading && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/40 text-sm font-medium text-white">
                 Uploading…

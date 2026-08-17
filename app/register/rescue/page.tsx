@@ -2,23 +2,52 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { EmailField, TextField, ProvinceSelect } from '@/components/FormFields';
+import { emailError, requiredErrors } from '@/lib/forms';
 
 export default function RescueRegisterPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [form, setForm] = useState({
     email: '', password: '', confirmPassword: '',
     orgName: '', phone: '', city: '', province: '',
     website: '', address: '',
   });
 
-  const update = (field: string, val: string) => setForm(f => ({...f, [field]: val}));
+  const update = (field: string, val: string) => {
+    setForm(f => ({...f, [field]: val}));
+    setErrors(e => (e[field] ? { ...e, [field]: '' } : e));
+  };
+
+  const REQUIRED = [
+    { name: 'orgName', label: 'Organization name' },
+    { name: 'city', label: 'City' },
+    { name: 'province', label: 'Province' },
+    { name: 'phone', label: 'Phone' },
+    { name: 'email', label: 'Email address' },
+    { name: 'password', label: 'Password' },
+    { name: 'confirmPassword', label: 'Password confirmation' },
+  ];
+
+  const validate = () => {
+    const found = requiredErrors(form, REQUIRED);
+    if (form.email && !found.email) {
+      const e = emailError(form.email);
+      if (e) found.email = e;
+    }
+    if (form.password && form.password.length < 8) found.password = 'Use at least 8 characters';
+    if (form.confirmPassword && form.password !== form.confirmPassword) {
+      found.confirmPassword = "Passwords don't match";
+    }
+    setErrors(found);
+    return Object.keys(found).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (form.password !== form.confirmPassword) { setError("Passwords don't match"); return; }
-    if (form.password.length < 8) { setError('Password must be at least 8 characters'); return; }
+    if (!validate()) return;
     setLoading(true); setError('');
 
     // Organization details go with the registration itself. Signing up no longer
@@ -40,9 +69,6 @@ export default function RescueRegisterPage() {
     router.push('/registration-received?role=rescue');
   };
 
-  const cx = "w-full border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-400";
-  const lx = "block text-sm font-medium text-stone-700 mb-1";
-
   return (
     <div className="min-h-screen bg-amber-50 flex flex-col items-center justify-center px-4 py-12">
       <div className="bg-white rounded-2xl shadow-sm border border-stone-100 p-8 w-full max-w-lg">
@@ -56,30 +82,36 @@ export default function RescueRegisterPage() {
           <div className="bg-green-50 rounded-xl p-4">
             <p className="text-xs font-semibold text-green-800 uppercase tracking-wide mb-3">Organization Details</p>
             <div className="space-y-3">
-              <div><label className={lx}>Organization Name <span className="text-red-400">*</span></label>
-                <input type="text" value={form.orgName} placeholder="Paws & Hearts Rescue" required onChange={e => update('orgName', e.target.value)} className={cx} /></div>
+              <TextField label="Organization Name" required value={form.orgName} error={errors.orgName}
+                placeholder="Paws &amp; Hearts Rescue" onChange={v => update('orgName', v)} />
               <div className="grid grid-cols-2 gap-3">
-                <div><label className={lx}>City</label>
-                  <input type="text" value={form.city} placeholder="Toronto" onChange={e => update('city', e.target.value)} className={cx} /></div>
-                <div><label className={lx}>Province</label>
-                  <input type="text" value={form.province} placeholder="ON" onChange={e => update('province', e.target.value)} className={cx} /></div>
+                <TextField label="City" required value={form.city} error={errors.city}
+                  placeholder="Toronto" onChange={v => update('city', v)} />
+                <ProvinceSelect required value={form.province} error={errors.province}
+                  onChange={v => update('province', v)} />
               </div>
-              <div><label className={lx}>Phone</label>
-                <input type="text" value={form.phone} placeholder="416-555-0100" onChange={e => update('phone', e.target.value)} className={cx} /></div>
-              <div><label className={lx}>Website (optional)</label>
-                <input type="text" value={form.website} placeholder="https://yourrescue.org" onChange={e => update('website', e.target.value)} className={cx} /></div>
+              <TextField label="Phone" required value={form.phone} error={errors.phone}
+                placeholder="416-555-0100" onChange={v => update('phone', v)} />
+              <TextField label="Website (optional)" value={form.website}
+                placeholder="https://yourrescue.org" onChange={v => update('website', v)} />
             </div>
           </div>
 
           <div className="bg-stone-50 rounded-xl p-4">
             <p className="text-xs font-semibold text-stone-600 uppercase tracking-wide mb-3">Account Credentials</p>
             <div className="space-y-3">
-              <div><label className={lx}>Email <span className="text-red-400">*</span></label>
-                <input type="email" value={form.email} placeholder="contact@yourrescue.org" required onChange={e => update('email', e.target.value)} className={cx} /></div>
-              <div><label className={lx}>Password <span className="text-red-400">*</span></label>
-                <input type="password" value={form.password} placeholder="Min. 8 characters" required onChange={e => update('password', e.target.value)} className={cx} /></div>
-              <div><label className={lx}>Confirm Password <span className="text-red-400">*</span></label>
-                <input type="password" value={form.confirmPassword} placeholder="Repeat password" required onChange={e => update('confirmPassword', e.target.value)} className={cx} /></div>
+              <EmailField label="Email" value={form.email} error={errors.email}
+                placeholder="contact@yourrescue.org"
+                onChange={v => update('email', v)}
+                onBlur={() => {
+                  const e = form.email ? emailError(form.email) : null;
+                  setErrors(prev => ({ ...prev, email: e || '' }));
+                }} />
+              <TextField label="Password" required type="password" value={form.password} error={errors.password}
+                placeholder="Min. 8 characters" onChange={v => update('password', v)} />
+              <TextField label="Confirm Password" required type="password" value={form.confirmPassword}
+                error={errors.confirmPassword} placeholder="Repeat password"
+                onChange={v => update('confirmPassword', v)} />
             </div>
           </div>
 

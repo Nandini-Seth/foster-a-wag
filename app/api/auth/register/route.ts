@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import { queryOne, transaction } from '@/lib/db';
+import { isValidEmail, isProvinceCode } from '@/lib/forms';
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -30,6 +31,18 @@ export async function POST(req: NextRequest) {
         { error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters` },
         { status: 400 }
       );
+    }
+
+    // Re-checked here, not just in the form: the client validation is a courtesy,
+    // and an unroutable address means we can never approve the account.
+    if (!isValidEmail(email)) {
+      return NextResponse.json(
+        { error: 'Enter a valid email address, like name@example.com' },
+        { status: 400 }
+      );
+    }
+    if (profile?.province && !isProvinceCode(profile.province)) {
+      return NextResponse.json({ error: 'Select a valid province or territory' }, { status: 400 });
     }
 
     const normalizedEmail = String(email).trim().toLowerCase();

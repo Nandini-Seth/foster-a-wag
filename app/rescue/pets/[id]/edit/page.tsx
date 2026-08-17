@@ -4,12 +4,14 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import PhotoUpload from '@/components/PhotoUpload';
+import { ProvinceSelect, TriState } from '@/components/FormFields';
+import { TRISTATE_COMPAT, TRISTATE_HOUSE_TRAINED } from '@/lib/forms';
 import { PET_STATE_HELP, PET_STATE_LABEL, isEditableState, type PetState } from '@/lib/pets';
 
 const EMPTY = {
   name: '', species: 'Dog', breed: '', ageYears: '', sex: 'Unknown', weightKg: '',
-  houseTrained: false, spayedNeutered: false, microchipped: false, vaccinated: false,
-  goodWithKids: true, goodWithDogs: true, goodWithCats: true,
+  houseTrained: 'UNKNOWN', spayedNeutered: false, vaccinated: false,
+  goodWithKids: 'UNKNOWN', goodWithDogs: 'UNKNOWN', goodWithCats: 'UNKNOWN',
   specialNeeds: '', bio: '',
   availableFrom: '', urgentBy: '',
   city: '', province: '',
@@ -35,10 +37,11 @@ export default function EditPetPage({ params }: { params: { id: string } }) {
         setForm({
           name: pet.name ?? '', species: pet.species ?? 'Dog', breed: pet.breed ?? '',
           ageYears: pet.age_years ?? '', sex: pet.sex ?? 'Unknown', weightKg: pet.weight_kg ?? '',
-          houseTrained: !!pet.house_trained, spayedNeutered: !!pet.spayed_neutered,
-          microchipped: !!pet.microchipped, vaccinated: !!pet.vaccinated,
-          goodWithKids: !!pet.good_with_kids, goodWithDogs: !!pet.good_with_dogs,
-          goodWithCats: !!pet.good_with_cats,
+          houseTrained: pet.house_trained ?? 'UNKNOWN', spayedNeutered: !!pet.spayed_neutered,
+          vaccinated: !!pet.vaccinated,
+          goodWithKids: pet.good_with_kids ?? 'UNKNOWN',
+          goodWithDogs: pet.good_with_dogs ?? 'UNKNOWN',
+          goodWithCats: pet.good_with_cats ?? 'UNKNOWN',
           specialNeeds: pet.special_needs ?? '', bio: pet.bio ?? '',
           // These feed <input type="date">, which needs a bare YYYY-MM-DD.
           availableFrom: pet.available_from ?? '', urgentBy: pet.urgent_by ?? '',
@@ -203,17 +206,20 @@ export default function EditPetPage({ params }: { params: { id: string } }) {
 
             <div className="bg-stone-50 rounded-xl p-4 space-y-3">
               <p className="text-xs font-bold text-stone-500 uppercase tracking-wide">Health Status</p>
-              <Toggle label="House Trained" field="houseTrained" />
+              <TriState label="House Trained" value={form.houseTrained} disabled={!editable}
+                options={TRISTATE_HOUSE_TRAINED} onChange={v => update('houseTrained', v)} />
               <Toggle label="Spayed / Neutered" field="spayedNeutered" />
-              <Toggle label="Microchipped" field="microchipped" />
               <Toggle label="Vaccinations Up to Date" field="vaccinated" />
             </div>
 
             <div className="bg-stone-50 rounded-xl p-4 space-y-3">
               <p className="text-xs font-bold text-stone-500 uppercase tracking-wide">Compatible With</p>
-              <Toggle label="Good with Kids" field="goodWithKids" />
-              <Toggle label="Good with Dogs" field="goodWithDogs" />
-              <Toggle label="Good with Cats" field="goodWithCats" />
+              <TriState label="Good with Kids" value={form.goodWithKids} disabled={!editable}
+                options={TRISTATE_COMPAT} onChange={v => update('goodWithKids', v)} />
+              <TriState label="Good with Dogs" value={form.goodWithDogs} disabled={!editable}
+                options={TRISTATE_COMPAT} onChange={v => update('goodWithDogs', v)} />
+              <TriState label="Good with Cats" value={form.goodWithCats} disabled={!editable}
+                options={TRISTATE_COMPAT} onChange={v => update('goodWithCats', v)} />
             </div>
 
             <div>
@@ -234,10 +240,8 @@ export default function EditPetPage({ params }: { params: { id: string } }) {
                 <label className={lx}>City</label>
                 <input value={form.city} onChange={e => update('city', e.target.value)} className={cx} />
               </div>
-              <div>
-                <label className={lx}>Province</label>
-                <input value={form.province} onChange={e => update('province', e.target.value)} className={cx} />
-              </div>
+              <ProvinceSelect value={form.province} disabled={!editable}
+                onChange={v => update('province', v)} />
             </div>
           </div>
         </fieldset>

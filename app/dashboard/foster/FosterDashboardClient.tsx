@@ -3,6 +3,7 @@ import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import Navbar from '@/components/Navbar';
+import { PROVINCES } from '@/lib/forms';
 import PetPhoto from '@/components/PetPhoto';
 
 export default function FosterDashboardClient() {
@@ -191,13 +192,21 @@ export default function FosterDashboardClient() {
                   </div>
                   <p className="text-xs text-stone-400 mt-1">Click to upload</p>
                 </div>
-                {([['Full Name','fullName'],['Phone','phone'],['City','city'],['Province','province']] as const).map(([lbl,fld]) => (
+                {([['Full Name','fullName'],['Phone','phone'],['City','city']] as const).map(([lbl,fld]) => (
                   <div key={fld}>
                     <label className="text-xs font-medium text-stone-500 mb-1 block">{lbl}</label>
                     <input value={profileForm[fld] || ''} onChange={e => setProfileForm((f: any) => ({...f,[fld]:e.target.value}))}
                       className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
                   </div>
                 ))}
+                <div>
+                  <label className="text-xs font-medium text-stone-500 mb-1 block">Province / Territory</label>
+                  <select value={profileForm.province || ''} onChange={e => setProfileForm((f: any) => ({...f, province: e.target.value}))}
+                    className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+                    <option value="">Select…</option>
+                    {PROVINCES.map(pr => <option key={pr.code} value={pr.code}>{pr.code} — {pr.name}</option>)}
+                  </select>
+                </div>
                 <div>
                   <label className="text-xs font-medium text-stone-500 mb-1 block">Dwelling Type</label>
                   <select value={profileForm.dwellingType||''} onChange={e => setProfileForm((f: any) => ({...f,dwellingType:e.target.value}))}
@@ -274,7 +283,7 @@ export default function FosterDashboardClient() {
               {apps.map((app: any) => (
                 <div key={app.id} className="flex items-center gap-4 bg-white border border-stone-100 rounded-2xl p-4 shadow-sm hover:bg-stone-50">
                   {app.primary_photo ? (
-                    <PetPhoto src={app.primary_photo} alt={app.pet_name} className="w-14 h-14 rounded-xl object-cover flex-shrink-0" />
+                    <PetPhoto src={app.primary_photo} alt={app.pet_name} className="w-14 h-14 rounded-xl bg-white flex-shrink-0" />
                   ) : (
                     <div className="w-14 h-14 rounded-xl bg-stone-100 flex items-center justify-center text-2xl flex-shrink-0">🐾</div>
                   )}

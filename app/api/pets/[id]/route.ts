@@ -4,6 +4,7 @@ import { getSession } from '@/lib/session';
 import { isUuid } from '@/lib/validate';
 import { denyIfNotActive } from '@/lib/auth';
 import { isPetState, PUBLIC_PET_STATE } from '@/lib/pets';
+import { COMPAT_VALUES, HOUSE_TRAINED_VALUES, isProvinceCode } from '@/lib/forms';
 
 /**
  * ACTIVE posts are public. PENDING and DELETED are visible only to the rescue
@@ -48,7 +49,6 @@ const EDITABLE_FIELDS: Record<string, string> = {
   weightKg: 'weight_kg',
   houseTrained: 'house_trained',
   spayedNeutered: 'spayed_neutered',
-  microchipped: 'microchipped',
   vaccinated: 'vaccinated',
   goodWithKids: 'good_with_kids',
   goodWithDogs: 'good_with_dogs',
@@ -62,10 +62,15 @@ const EDITABLE_FIELDS: Record<string, string> = {
   primaryPhoto: 'primary_photo',
 };
 
-const BOOLEAN_FIELDS = new Set([
-  'house_trained', 'spayed_neutered', 'microchipped', 'vaccinated',
-  'good_with_kids', 'good_with_dogs', 'good_with_cats',
-]);
+const BOOLEAN_FIELDS = new Set(['spayed_neutered', 'vaccinated']);
+
+// Three-valued columns, each with its own allowed set.
+const ENUM_FIELDS: Record<string, string[]> = {
+  house_trained: HOUSE_TRAINED_VALUES,
+  good_with_kids: COMPAT_VALUES,
+  good_with_dogs: COMPAT_VALUES,
+  good_with_cats: COMPAT_VALUES,
+};
 
 const NULLABLE_TEXT = new Set([
   'breed', 'sex', 'special_needs', 'bio', 'available_from', 'urgent_by',
@@ -120,6 +125,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
     if (BOOLEAN_FIELDS.has(column)) {
       value = !!value;
+    } else if (ENUM_FIELDS[column]) {
+      if (!ENUM_FIELDS[column].includes(value)) {
+        return NextResponse.json({ error: `Invalid value for ${key}` }, { status: 400 });
+      }
     } else if (NULLABLE_TEXT.has(column)) {
       value = value === '' || typeof value === 'undefined' ? null : value;
     }
@@ -146,6 +155,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
   if (contentKeys.includes('species') && !String(body.species || '').trim()) {
     return NextResponse.json({ error: 'Species is required' }, { status: 400 });
+  }
+  if (contentKeys.includes('province') && body.province && !isProvinceCode(body.province)) {
+    return NextResponse.json({ error: 'Select a valid province or territory' }, { status: 400 });
   }
 
   values.push(params.id);

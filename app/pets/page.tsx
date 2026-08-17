@@ -103,9 +103,9 @@ export default function PetsPage() {
             {pets.map(pet => (
               <Link key={pet.id} href={`/pets/${pet.id}`}
                 className="bg-white rounded-2xl overflow-hidden shadow-sm border border-stone-100 hover:shadow-lg transition-all hover:-translate-y-0.5 group">
-                <div className="relative h-48 bg-stone-100 overflow-hidden">
+                <div className="relative h-48 bg-white overflow-hidden">
                   <PetPhoto src={pet.primary_photo} alt={pet.name}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full bg-white"
                     imgClassName="group-hover:scale-105 transition-transform duration-300" />
                   <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 text-xs font-semibold text-stone-700">
                     {speciesEmoji[pet.species]} {pet.species}
@@ -123,8 +123,9 @@ export default function PetsPage() {
                   </div>
                   <p className="text-stone-600 text-sm line-clamp-2 mb-4">{pet.bio}</p>
                   <div className="flex flex-wrap gap-1.5">
-                    {pet.house_trained ? <span className="bg-green-50 text-green-700 text-xs px-2.5 py-1 rounded-full font-medium">House trained</span> : null}
-                    {pet.good_with_kids ? <span className="bg-blue-50 text-blue-700 text-xs px-2.5 py-1 rounded-full font-medium">Good w/ kids</span> : null}
+                    {pet.house_trained === 'YES' ? <span className="bg-green-50 text-green-700 text-xs px-2.5 py-1 rounded-full font-medium">House trained</span> : null}
+                    {pet.house_trained === 'WORKING_ON_IT' ? <span className="bg-amber-50 text-amber-700 text-xs px-2.5 py-1 rounded-full font-medium">House training</span> : null}
+                    {pet.good_with_kids === 'YES' ? <span className="bg-blue-50 text-blue-700 text-xs px-2.5 py-1 rounded-full font-medium">Good w/ kids</span> : null}
                     {pet.vaccinated ? <span className="bg-purple-50 text-purple-700 text-xs px-2.5 py-1 rounded-full font-medium">Vaccinated</span> : null}
                   </div>
                   <p className="text-xs text-stone-400 mt-3">Posted by {pet.org_name}</p>

@@ -130,9 +130,9 @@ export default function RescueDashboardClient() {
                   className={`bg-white rounded-2xl border shadow-sm overflow-hidden ${
                     pet.status === 'DELETED' ? 'border-stone-200 opacity-60' : 'border-stone-100'
                   }`}>
-                  <div className="h-36 bg-stone-100 relative overflow-hidden">
+                  <div className="h-36 bg-white relative overflow-hidden">
                     <PetPhoto src={pet.primary_photo} alt={pet.name}
-                      className={`w-full h-full object-cover ${pet.status === 'DELETED' ? 'grayscale' : ''}`} />
+                      className={`w-full h-full bg-white ${pet.status === 'DELETED' ? 'grayscale' : ''}`} />
                     <span className={`absolute top-2 right-2 px-2.5 py-1 rounded-full text-xs font-bold ${petStatusColors[pet.status] || petStatusColors.PENDING}`}>
                       {pet.status === 'PENDING' ? '⏸ Pending' : pet.status === 'DELETED' ? '🗑 Deleted' : 'Active'}
                     </span>
@@ -196,7 +196,7 @@ export default function RescueDashboardClient() {
                 <div key={app.id} className="bg-white rounded-2xl border border-stone-100 shadow-sm p-5">
                   <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                     {app.primary_photo && (
-                      <PetPhoto src={app.primary_photo} alt={app.pet_name} className="w-16 h-16 rounded-xl object-cover flex-shrink-0" />
+                      <PetPhoto src={app.primary_photo} alt={app.pet_name} className="w-16 h-16 rounded-xl bg-white flex-shrink-0" />
                     )}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2 flex-wrap">

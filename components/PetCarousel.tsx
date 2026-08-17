@@ -95,7 +95,7 @@ export default function PetCarousel() {
           <PetPhoto
             src={pet.primary_photo}
             alt={pet.name}
-            className="h-full w-full object-cover"
+            className="h-full w-full"
             imgClassName="transition-transform duration-500 group-hover:scale-105"
           />
 

@@ -2,12 +2,15 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { EmailField, TextField, ProvinceSelect, fieldClass } from '@/components/FormFields';
+import { emailError, requiredErrors } from '@/lib/forms';
 
 export default function FosterRegisterPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [form, setForm] = useState({
     email: '', password: '', confirmPassword: '', fullName: '',
     phone: '', city: '', province: '', postalCode: '',
@@ -18,15 +21,58 @@ export default function FosterRegisterPage() {
     reminderFrequency: 'monthly',
   });
 
-  const update = (field: string, val: any) => setForm(f => ({...f, [field]: val}));
+  const update = (field: string, val: any) => {
+    setForm(f => ({...f, [field]: val}));
+    setErrors(e => (e[field] ? { ...e, [field]: '' } : e));
+  };
+
+  // Required fields per step, so a blank on step 3 never blocks step 1.
+  const STEP_REQUIRED: Record<number, { name: string; label: string }[]> = {
+    1: [
+      { name: 'fullName', label: 'Full name' },
+      { name: 'email', label: 'Email address' },
+      { name: 'password', label: 'Password' },
+      { name: 'confirmPassword', label: 'Password confirmation' },
+    ],
+    2: [
+      { name: 'phone', label: 'Phone' },
+      { name: 'city', label: 'City' },
+      { name: 'province', label: 'Province' },
+      { name: 'dwellingType', label: 'Type of dwelling' },
+    ],
+    3: [{ name: 'availableFrom', label: 'Availability date' }],
+  };
+
+  const validateStep = (n: number) => {
+    const found = requiredErrors(form, STEP_REQUIRED[n] ?? {} as any);
+    if (n === 1) {
+      if (form.email && !found.email) {
+        const e = emailError(form.email);
+        if (e) found.email = e;
+      }
+      if (form.password && form.password.length < 8) {
+        found.password = 'Use at least 8 characters';
+      }
+      if (form.confirmPassword && form.password !== form.confirmPassword) {
+        found.confirmPassword = "Passwords don't match";
+      }
+    }
+    setErrors(found);
+    return Object.keys(found).length === 0;
+  };
+
+  const goTo = (n: number) => {
+    if (n > step && !validateStep(step)) return;
+    setError('');
+    setStep(n);
+  };
   const toggleSpecies = (s: string) => {
     const cur = form.preferences.species;
     update('preferences', { ...form.preferences, species: cur.includes(s) ? cur.filter(x => x !== s) : [...cur, s] });
   };
 
   const handleRegister = async () => {
-    if (form.password !== form.confirmPassword) { setError("Passwords don't match"); return; }
-    if (form.password.length < 8) { setError('Password must be at least 8 characters'); return; }
+    if (!validateStep(3)) return;
     setLoading(true); setError('');
 
     // Profile details go with the registration itself. Signing up no longer
@@ -73,19 +119,21 @@ export default function FosterRegisterPage() {
         {step === 1 && (
           <div className="space-y-4">
             <h2 className="font-semibold text-stone-800">Account Details</h2>
-            <div><label className={lx}>Full Name</label>
-              <input type="text" value={form.fullName} placeholder="Jane Smith" onChange={e => update('fullName', e.target.value)} className={cx} /></div>
-            <div><label className={lx}>Email Address</label>
-              <input type="email" value={form.email} placeholder="jane@example.com" onChange={e => update('email', e.target.value)} className={cx} /></div>
-            <div><label className={lx}>Password</label>
-              <input type="password" value={form.password} placeholder="Min. 8 characters" onChange={e => update('password', e.target.value)} className={cx} /></div>
-            <div><label className={lx}>Confirm Password</label>
-              <input type="password" value={form.confirmPassword} placeholder="Repeat password" onChange={e => update('confirmPassword', e.target.value)} className={cx} /></div>
+            <TextField label="Full Name" required value={form.fullName} error={errors.fullName}
+              placeholder="Jane Smith" onChange={v => update('fullName', v)} />
+            <EmailField value={form.email} error={errors.email}
+              onChange={v => update('email', v)}
+              onBlur={() => {
+                const e = form.email ? emailError(form.email) : null;
+                setErrors(prev => ({ ...prev, email: e || '' }));
+              }} />
+            <TextField label="Password" required type="password" value={form.password} error={errors.password}
+              placeholder="Min. 8 characters" onChange={v => update('password', v)} />
+            <TextField label="Confirm Password" required type="password" value={form.confirmPassword}
+              error={errors.confirmPassword} placeholder="Repeat password"
+              onChange={v => update('confirmPassword', v)} />
             {error && <p className="text-red-600 text-sm">{error}</p>}
-            <button onClick={() => {
-              if (!form.email || !form.password || !form.fullName) { setError('Please fill in all fields'); return; }
-              setError(''); setStep(2);
-            }} className="w-full bg-amber-500 hover:bg-amber-400 text-white font-semibold py-3 rounded-xl">
+            <button onClick={() => goTo(2)} className="w-full bg-amber-500 hover:bg-amber-400 text-white font-semibold py-3 rounded-xl">
               Next: Home Details →
             </button>
           </div>
@@ -95,19 +143,20 @@ export default function FosterRegisterPage() {
           <div className="space-y-4">
             <h2 className="font-semibold text-stone-800">Your Home &amp; Contact</h2>
             <div className="grid grid-cols-2 gap-4">
-              <div><label className={lx}>Phone</label>
-                <input type="text" value={form.phone} placeholder="647-555-0100" onChange={e => update('phone', e.target.value)} className={cx} /></div>
-              <div><label className={lx}>City</label>
-                <input type="text" value={form.city} placeholder="Toronto" onChange={e => update('city', e.target.value)} className={cx} /></div>
-              <div><label className={lx}>Province</label>
-                <input type="text" value={form.province} placeholder="ON" onChange={e => update('province', e.target.value)} className={cx} /></div>
-              <div><label className={lx}>Postal Code</label>
-                <input type="text" value={form.postalCode} placeholder="M4B 1B5" onChange={e => update('postalCode', e.target.value)} className={cx} /></div>
+              <TextField label="Phone" required value={form.phone} error={errors.phone}
+                placeholder="647-555-0100" onChange={v => update('phone', v)} />
+              <TextField label="City" required value={form.city} error={errors.city}
+                placeholder="Toronto" onChange={v => update('city', v)} />
+              <ProvinceSelect required value={form.province} error={errors.province}
+                onChange={v => update('province', v)} />
+              <TextField label="Postal Code" value={form.postalCode}
+                placeholder="M4B 1B5" onChange={v => update('postalCode', v)} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">Type of Dwelling</label>
+              <label className="block text-sm font-medium text-stone-700 mb-1">Type of Dwelling <span className="text-red-400">*</span></label>
               <select value={form.dwellingType} onChange={e => update('dwellingType', e.target.value)}
-                className="w-full border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+                aria-invalid={!!errors.dwellingType}
+                className={fieldClass(errors.dwellingType)}>
                 <option value="">Select type</option>
                 <option value="house">House</option>
                 <option value="apartment">Apartment</option>
@@ -115,6 +164,7 @@ export default function FosterRegisterPage() {
                 <option value="townhouse">Townhouse</option>
                 <option value="farm">Farm / Rural</option>
               </select>
+              {errors.dwellingType && <p role="alert" className="mt-1 text-sm text-red-600">{errors.dwellingType}</p>}
             </div>
             <label className="flex items-center gap-3 cursor-pointer">
               <input type="checkbox" checked={form.fencedBackyard} onChange={e => update('fencedBackyard', e.target.checked)}
@@ -141,8 +191,8 @@ export default function FosterRegisterPage() {
               <p className="text-xs text-stone-400 mt-1">List any pets you currently have</p>
             </div>
             <div className="flex gap-3">
-              <button onClick={() => setStep(1)} className="flex-1 border border-stone-200 hover:bg-stone-50 text-stone-700 font-semibold py-3 rounded-xl">← Back</button>
-              <button onClick={() => setStep(3)} className="flex-1 bg-amber-500 hover:bg-amber-400 text-white font-semibold py-3 rounded-xl">Next: Preferences →</button>
+              <button onClick={() => goTo(1)} className="flex-1 border border-stone-200 hover:bg-stone-50 text-stone-700 font-semibold py-3 rounded-xl">← Back</button>
+              <button onClick={() => goTo(3)} className="flex-1 bg-amber-500 hover:bg-amber-400 text-white font-semibold py-3 rounded-xl">Next: Preferences →</button>
             </div>
           </div>
         )}
@@ -163,9 +213,11 @@ export default function FosterRegisterPage() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">Available to foster from</label>
+              <label className="block text-sm font-medium text-stone-700 mb-1">Available to foster from <span className="text-red-400">*</span></label>
               <input type="date" value={form.availableFrom} onChange={e => update('availableFrom', e.target.value)}
-                className="w-full border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+                aria-invalid={!!errors.availableFrom}
+                className={fieldClass(errors.availableFrom)} />
+              {errors.availableFrom && <p role="alert" className="mt-1 text-sm text-red-600">{errors.availableFrom}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-stone-700 mb-1">Availability reminder frequency</label>
@@ -178,7 +230,7 @@ export default function FosterRegisterPage() {
             </div>
             {error && <p className="text-red-600 text-sm bg-red-50 rounded-lg px-3 py-2">{error}</p>}
             <div className="flex gap-3">
-              <button onClick={() => setStep(2)} className="flex-1 border border-stone-200 hover:bg-stone-50 text-stone-700 font-semibold py-3 rounded-xl">← Back</button>
+              <button onClick={() => goTo(2)} className="flex-1 border border-stone-200 hover:bg-stone-50 text-stone-700 font-semibold py-3 rounded-xl">← Back</button>
               <button onClick={handleRegister} disabled={loading}
                 className="flex-1 bg-green-800 hover:bg-green-700 disabled:opacity-50 text-white font-semibold py-3 rounded-xl">
                 {loading ? 'Creating account…' : 'Create Account 🐾'}
