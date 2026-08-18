@@ -1,0 +1,33 @@
+steps:
+  # Step 1: Build the container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'northamerica-northeast2-docker.pkg.dev/foster-a-wag-prod/foster-a-wag/app:$COMMIT_SHA'
+      - '.'
+
+  # Step 2: Push the container image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'northamerica-northeast2-docker.pkg.dev/foster-a-wag-prod/foster-a-wag/app:$COMMIT_SHA'
+
+  # Step 3: Deploy to Cloud Run using the pushed image
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'foster-a-wag'
+      - '--image'
+      - 'northamerica-northeast2-docker.pkg.dev/foster-a-wag-prod/foster-a-wag/app:$COMMIT_SHA'
+      - '--region'
+      - 'northamerica-northeast2'
+
+images:
+  - 'northamerica-northeast2-docker.pkg.dev/foster-a-wag-prod/foster-a-wag/app:$COMMIT_SHA'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
