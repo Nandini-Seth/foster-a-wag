@@ -2,16 +2,23 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { EmailField, TextField } from '@/components/FormFields';
+import { emailError } from '@/lib/forms';
 
 export default function LoginPage() {
   const router = useRouter();
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
+  const [emailErr, setEmailErr] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(''); setLoading(true);
+    // Catch a malformed address here rather than returning a generic
+    // "invalid email or password" that hides a simple typo.
+    const bad = emailError(form.email);
+    if (bad) { setEmailErr(bad); return; }
+    setEmailErr(''); setError(''); setLoading(true);
     const res = await fetch('/api/auth/login', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form),
@@ -35,18 +42,12 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">Email</label>
-              <input type="email" required value={form.email} onChange={e => setForm(f => ({...f, email: e.target.value}))}
-                className="w-full border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
-                placeholder="you@example.com" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">Password</label>
-              <input type="password" required value={form.password} onChange={e => setForm(f => ({...f, password: e.target.value}))}
-                className="w-full border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
-                placeholder="••••••••" />
-            </div>
+            <EmailField label="Email" value={form.email} error={emailErr}
+              placeholder="you@example.com"
+              onChange={v => { setForm(f => ({...f, email: v})); if (emailErr) setEmailErr(''); }}
+              onBlur={() => setEmailErr(form.email ? emailError(form.email) || '' : '')} />
+            <TextField label="Password" required type="password" value={form.password}
+              placeholder="••••••••" onChange={v => setForm(f => ({...f, password: v}))} />
             {error && <p className="text-red-600 text-sm bg-red-50 rounded-lg px-3 py-2">{error}</p>}
             <button type="submit" disabled={loading}
               className="w-full bg-green-800 hover:bg-green-700 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors">

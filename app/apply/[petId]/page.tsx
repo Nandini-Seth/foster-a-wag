@@ -111,7 +111,7 @@ export default function ApplyPage({ params }: { params: { petId: string } }) {
         {/* Pet summary */}
         {pet && (
           <div className="bg-white rounded-2xl border border-stone-100 shadow-sm p-5 mb-8 flex gap-4">
-            <PetPhoto src={pet.primary_photo} alt={pet.name} className="w-20 h-20 rounded-xl object-cover flex-shrink-0" />
+            <PetPhoto src={pet.primary_photo} alt={pet.name} className="w-20 h-20 rounded-xl bg-white flex-shrink-0" />
             <div>
               <h2 className="font-display text-2xl text-green-900">Fostering {pet.name}</h2>
               <p className="text-stone-500 text-sm">{pet.breed || pet.species} · {pet.city}, {pet.province} · Posted by {pet.org_name}</p>

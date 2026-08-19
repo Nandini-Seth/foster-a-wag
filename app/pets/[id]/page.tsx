@@ -5,7 +5,10 @@ import Navbar from '@/components/Navbar';
 import PetPhoto from '@/components/PetPhoto';
 import { AvailableFromPanel } from '@/components/AvailableFrom';
 import { formatDate } from '@/lib/date';
-import { PET_STATE_HELP, PET_STATE_LABEL, isEditableState, type PetState } from '@/lib/pets';
+import {
+  PET_STATE_HELP, PET_STATE_LABEL, isEditableState, compatLabel, houseTrainedLabel,
+  type PetState,
+} from '@/lib/pets';
 
 export default function PetDetailPage({ params }: { params: { id: string } }) {
   const [pet, setPet] = useState<any>(null);
@@ -25,8 +28,16 @@ export default function PetDetailPage({ params }: { params: { id: string } }) {
   if (loading) return <><Navbar /><div className="max-w-4xl mx-auto px-6 py-20 text-center text-stone-400">Loading…</div></>;
   if (!pet || pet.error) return <><Navbar /><div className="max-w-4xl mx-auto px-6 py-20 text-center text-stone-400">Pet not found.</div></>;
 
+  // Full class strings, not interpolated: Tailwind only emits classes it can see
+  // literally in the source, so `bg-${color}-50` compiles to nothing.
+  const PILL_TONE: Record<string, string> = {
+    green: 'bg-green-50 text-green-700',
+    stone: 'bg-stone-100 text-stone-600',
+    amber: 'bg-amber-50 text-amber-700',
+    blue: 'bg-blue-50 text-blue-700',
+  };
   const Pill = ({ children, color = 'green' }: any) => (
-    <span className={`bg-${color}-50 text-${color}-700 text-sm px-3 py-1.5 rounded-full font-medium`}>{children}</span>
+    <span className={`${PILL_TONE[color] ?? PILL_TONE.green} text-sm px-3 py-1.5 rounded-full font-medium`}>{children}</span>
   );
 
   const state = (pet.status ?? 'ACTIVE') as PetState;
@@ -56,8 +67,10 @@ export default function PetDetailPage({ params }: { params: { id: string } }) {
         <div className="grid md:grid-cols-2 gap-8">
           {/* Photo */}
           <div>
-            <div className="rounded-2xl overflow-hidden bg-stone-100 h-80 md:h-96">
-              <PetPhoto src={pet.primary_photo} alt={pet.name} className="w-full h-full object-cover" />
+            <div className="rounded-2xl overflow-hidden bg-amber-50 border border-stone-100 h-80 md:h-96">
+              {/* Letterbox bars take the page ground so the photo sits on the page
+                  rather than in a white box of its own. */}
+              <PetPhoto src={pet.primary_photo} alt={pet.name} className="w-full h-full bg-amber-50" />
             </div>
             <div className="mt-4 bg-white rounded-2xl p-5 border border-stone-100">
               <p className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-3">Posted by</p>
@@ -86,14 +99,38 @@ export default function PetDetailPage({ params }: { params: { id: string } }) {
             <p className="text-stone-600 leading-relaxed mb-6">{pet.bio}</p>
 
             <div className="flex flex-wrap gap-2 mb-6">
-              {pet.house_trained ? <Pill>🏠 House Trained</Pill> : <Pill color="stone">⚠️ Not House Trained</Pill>}
+              {(() => {
+                const ht = houseTrainedLabel(pet.house_trained);
+                return ht ? (
+                  <Pill color={ht.tone === 'good' ? 'green' : ht.tone === 'partial' ? 'amber' : 'stone'}>{ht.text}</Pill>
+                ) : null;
+              })()}
               {pet.spayed_neutered ? <Pill>✂️ Spayed/Neutered</Pill> : null}
               {pet.vaccinated ? <Pill color="blue">💉 Vaccinated</Pill> : null}
-              {pet.microchipped ? <Pill color="purple">📡 Microchipped</Pill> : null}
-              {pet.good_with_kids ? <Pill color="yellow">👶 Good w/ Kids</Pill> : <Pill color="stone">⚠️ No Young Kids</Pill>}
-              {pet.good_with_dogs ? <Pill color="orange">🐶 Good w/ Dogs</Pill> : null}
-              {pet.good_with_cats ? <Pill color="pink">🐱 Good w/ Cats</Pill> : null}
+              {([
+                [pet.good_with_kids, '👶 Good w/ Kids', '⚠️ No Young Kids'],
+                [pet.good_with_dogs, '🐶 Good w/ Dogs', '⚠️ Not Good w/ Dogs'],
+                [pet.good_with_cats, '🐱 Good w/ Cats', '⚠️ Not Good w/ Cats'],
+              ] as const).map(([value, yes, no], i) => {
+                const c = compatLabel(value, yes, no);
+                return c ? <Pill key={i} color={c.tone === 'good' ? 'green' : 'stone'}>{c.text}</Pill> : null;
+              })}
             </div>
+
+            {/* Named explicitly rather than left as a silent gap, so a foster can
+                see the difference between "no" and "the rescue does not know". */}
+            {(() => {
+              const unknowns = [
+                pet.good_with_kids === 'UNKNOWN' && 'children',
+                pet.good_with_dogs === 'UNKNOWN' && 'dogs',
+                pet.good_with_cats === 'UNKNOWN' && 'cats',
+              ].filter(Boolean);
+              return unknowns.length > 0 ? (
+                <p className="text-stone-500 text-sm mb-6 -mt-3">
+                  The rescue has not been able to test {pet.name} with {unknowns.join(', ')}.
+                </p>
+              ) : null;
+            })()}
 
             <div className="grid grid-cols-2 gap-3 text-sm mb-6">
               <div className="bg-stone-50 rounded-xl p-3">

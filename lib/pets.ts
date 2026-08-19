@@ -20,6 +20,30 @@ export const PET_STATE_LABEL: Record<PetState, string> = {
   DELETED: 'Deleted',
 };
 
+/**
+ * How a three-valued answer reads on a listing.
+ * `null` means say nothing — an unknown is not worth a badge, but it must not be
+ * shown as a "no" either, which is what a boolean forced.
+ */
+export function compatLabel(
+  value: string | null | undefined,
+  yes: string,
+  no: string
+): { text: string; tone: 'good' | 'warn' } | null {
+  if (value === 'YES') return { text: yes, tone: 'good' };
+  if (value === 'NO') return { text: no, tone: 'warn' };
+  return null;
+}
+
+export function houseTrainedLabel(
+  value: string | null | undefined
+): { text: string; tone: 'good' | 'warn' | 'partial' } | null {
+  if (value === 'YES') return { text: '🏠 House Trained', tone: 'good' };
+  if (value === 'NO') return { text: '⚠️ Not House Trained', tone: 'warn' };
+  if (value === 'WORKING_ON_IT') return { text: '🏠 House Training in Progress', tone: 'partial' };
+  return null;
+}
+
 export const PET_STATE_HELP: Record<PetState, string> = {
   ACTIVE: 'Visible to everyone and accepting applications.',
   PENDING: 'Hidden from the public — only you can see it. Use this once you have enough applications.',

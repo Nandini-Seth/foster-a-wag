@@ -268,8 +268,8 @@ export default function AdminDashboardClient() {
               {pets.map((pet: any) => (
                 <div key={pet.id} className="bg-white rounded-2xl border border-stone-100 shadow-sm p-5">
                   <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
-                    <div className="w-14 h-14 rounded-xl overflow-hidden bg-stone-100 flex-shrink-0">
-                      <PetPhoto src={pet.primary_photo} alt={pet.name} className="w-full h-full object-cover" />
+                    <div className="w-14 h-14 rounded-xl overflow-hidden bg-white flex-shrink-0">
+                      <PetPhoto src={pet.primary_photo} alt={pet.name} className="w-full h-full bg-white" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
