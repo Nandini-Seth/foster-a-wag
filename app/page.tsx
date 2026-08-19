@@ -29,11 +29,13 @@ export default function Home() {
           </div>
           <div className="flex-shrink-0">
             <PetCarousel />
-            <p className="mt-4 text-center text-sm text-green-200">
-              <Link href="/pets" className="font-semibold text-amber-300 hover:underline">
-                Browse all pets →
+            <div className="mt-5 flex justify-center">
+              <Link href="/pets"
+                className="inline-flex items-center gap-2 rounded-full bg-amber-500 px-7 py-3.5 text-base font-bold text-white shadow-lg ring-2 ring-amber-300/50 transition-colors hover:bg-amber-400 focus:outline-none focus-visible:ring-4 focus-visible:ring-amber-200">
+                🐾 Browse All Pets
+                <span aria-hidden="true">→</span>
               </Link>
-            </p>
+            </div>
           </div>
         </div>
       </section>

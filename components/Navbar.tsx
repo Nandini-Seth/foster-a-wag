@@ -36,7 +36,7 @@ export default function Navbar() {
             {session?.isLoggedIn ? (
               <>
                 {session.role === 'FOSTER' && (
-                  <Link href="/pets" className="bg-amber-500 hover:bg-amber-400 text-white text-sm font-medium px-4 py-1.5 rounded-full transition-colors">Browse Pets</Link>
+                  <Link href="/pets" className="bg-amber-500 hover:bg-amber-400 text-white text-sm font-bold px-4 py-1.5 rounded-full transition-colors">Browse Pets</Link>
                 )}
                 {session.role === 'RESCUE' && (
                   <>
@@ -52,7 +52,7 @@ export default function Navbar() {
             ) : (
               <>
                 {/* Visitors can browse without an account. */}
-                <Link href="/pets" className="text-green-100 hover:text-amber-300 text-sm font-medium transition-colors">Browse Pets</Link>
+                <Link href="/pets" className="text-amber-300 hover:text-amber-200 text-sm font-bold transition-colors">Browse Pets</Link>
                 <Link href="/login" className="text-green-100 hover:text-amber-300 text-sm font-medium transition-colors">Sign In</Link>
                 <Link href="/register" className="bg-amber-500 hover:bg-amber-400 text-white text-sm font-medium px-4 py-1.5 rounded-full transition-colors">
                   Get Started
@@ -84,7 +84,7 @@ export default function Navbar() {
               </>
             ) : (
               <>
-                <Link href="/pets" className="text-green-100 text-sm font-medium px-2">Browse Pets</Link>
+                <Link href="/pets" className="text-amber-300 text-sm font-bold px-2">Browse Pets</Link>
                 <Link href="/login" className="text-green-100 text-sm font-medium px-2">Sign In</Link>
                 <Link href="/register" className="text-amber-300 text-sm font-medium px-2">Get Started</Link>
               </>

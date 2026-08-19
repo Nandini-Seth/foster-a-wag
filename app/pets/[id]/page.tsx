@@ -67,8 +67,10 @@ export default function PetDetailPage({ params }: { params: { id: string } }) {
         <div className="grid md:grid-cols-2 gap-8">
           {/* Photo */}
           <div>
-            <div className="rounded-2xl overflow-hidden bg-white border border-stone-100 h-80 md:h-96">
-              <PetPhoto src={pet.primary_photo} alt={pet.name} className="w-full h-full bg-white" />
+            <div className="rounded-2xl overflow-hidden bg-amber-50 border border-stone-100 h-80 md:h-96">
+              {/* Letterbox bars take the page ground so the photo sits on the page
+                  rather than in a white box of its own. */}
+              <PetPhoto src={pet.primary_photo} alt={pet.name} className="w-full h-full bg-amber-50" />
             </div>
             <div className="mt-4 bg-white rounded-2xl p-5 border border-stone-100">
               <p className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-3">Posted by</p>
