@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { queryOne, execute } from '@/lib/db';
 import { getSession } from '@/lib/session';
 import { denyIfNotActive } from '@/lib/auth';
+import { isValidPhone, normalizePhone } from '@/lib/forms';
 
 export async function GET() {
   const session = await getSession();
@@ -22,13 +23,17 @@ export async function PUT(req: NextRequest) {
 
   const body = await req.json();
 
+  if (body.phone && !isValidPhone(body.phone)) {
+    return NextResponse.json({ error: 'Enter a 10-digit phone number' }, { status: 400 });
+  }
+
   await execute(
     `UPDATE rescue_profiles SET
        org_name = $1, phone = $2, city = $3, province = $4,
        website = $5, contact_email = $6, address = $7
      WHERE user_id = $8`,
     [
-      body.orgName || null, body.phone || null, body.city || null,
+      body.orgName || null, body.phone ? normalizePhone(body.phone) : null, body.city || null,
       body.province || null, body.website || null,
       body.contactEmail || null, body.address || null,
       session.userId,

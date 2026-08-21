@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import Navbar from '@/components/Navbar';
+import { formatPhone } from '@/lib/forms';
 import PetPhoto from '@/components/PetPhoto';
 
 export default function RescueDashboardClient() {
@@ -263,14 +264,14 @@ export default function RescueDashboardClient() {
                         <div>
                           <p className="text-xs font-semibold text-stone-400 uppercase mb-1">Vet Reference</p>
                           <p className="text-stone-700">{app.vet_ref_name}</p>
-                          {app.vet_ref_phone && <p className="text-stone-500 text-xs">{app.vet_ref_phone}</p>}
+                          {app.vet_ref_phone && <p className="text-stone-500 text-xs">{formatPhone(app.vet_ref_phone)}</p>}
                         </div>
                       )}
                       {(app.personal_ref_name || app.personal_ref_phone) && (
                         <div>
                           <p className="text-xs font-semibold text-stone-400 uppercase mb-1">Personal Reference</p>
                           <p className="text-stone-700">{app.personal_ref_name}</p>
-                          {app.personal_ref_phone && <p className="text-stone-500 text-xs">{app.personal_ref_phone}</p>}
+                          {app.personal_ref_phone && <p className="text-stone-500 text-xs">{formatPhone(app.personal_ref_phone)}</p>}
                         </div>
                       )}
                       {app.signature && (

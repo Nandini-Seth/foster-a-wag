@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
+import Navbar from '@/components/Navbar';
 import { useRouter } from 'next/navigation';
 import { EmailField, TextField } from '@/components/FormFields';
 import { emailError } from '@/lib/forms';
@@ -32,7 +33,9 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-amber-50 flex flex-col">
+    <>
+      <Navbar />
+    <div className="min-h-[calc(100vh-4rem)] bg-amber-50 flex flex-col">
       <div className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="bg-white rounded-2xl shadow-sm border border-stone-100 p-8 w-full max-w-md">
           <div className="text-center mb-8">
@@ -61,5 +64,6 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

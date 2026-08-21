@@ -3,7 +3,7 @@ import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import Navbar from '@/components/Navbar';
-import { PROVINCES } from '@/lib/forms';
+import { PROVINCES, normalizePhone, phoneError } from '@/lib/forms';
 import PetPhoto from '@/components/PetPhoto';
 
 export default function FosterDashboardClient() {
@@ -192,13 +192,25 @@ export default function FosterDashboardClient() {
                   </div>
                   <p className="text-xs text-stone-400 mt-1">Click to upload</p>
                 </div>
-                {([['Full Name','fullName'],['Phone','phone'],['City','city']] as const).map(([lbl,fld]) => (
+                {([['Full Name','fullName'],['City','city']] as const).map(([lbl,fld]) => (
                   <div key={fld}>
                     <label className="text-xs font-medium text-stone-500 mb-1 block">{lbl}</label>
                     <input value={profileForm[fld] || ''} onChange={e => setProfileForm((f: any) => ({...f,[fld]:e.target.value}))}
                       className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
                   </div>
                 ))}
+                <div>
+                  <label className="text-xs font-medium text-stone-500 mb-1 block">Phone <span className="text-stone-400">(10 digits)</span></label>
+                  <input type="tel" inputMode="numeric" value={profileForm.phone || ''}
+                    onChange={e => setProfileForm((f: any) => ({...f, phone: normalizePhone(e.target.value).slice(0, 10)}))}
+                    className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 ${
+                      profileForm.phone && phoneError(profileForm.phone)
+                        ? 'border-red-300 bg-red-50 focus:ring-red-400'
+                        : 'border-stone-200 focus:ring-amber-400'}`} />
+                  {profileForm.phone && phoneError(profileForm.phone) && (
+                    <p role="alert" className="mt-1 text-xs text-red-600">{phoneError(profileForm.phone)}</p>
+                  )}
+                </div>
                 <div>
                   <label className="text-xs font-medium text-stone-500 mb-1 block">Province / Territory</label>
                   <select value={profileForm.province || ''} onChange={e => setProfileForm((f: any) => ({...f, province: e.target.value}))}

@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
+import { formatPhone } from '@/lib/forms';
 import PetPhoto from '@/components/PetPhoto';
 
 // The account review sequence. Only ACTIVE accounts can sign in.
@@ -198,7 +199,7 @@ export default function AdminDashboardClient() {
                           <p className="font-semibold text-stone-800 mt-2">{name || '(No name yet)'}</p>
                           <p className="text-stone-500 text-sm">{user.email}</p>
                           {(city || province) && <p className="text-stone-400 text-xs mt-0.5">{[city, province].filter(Boolean).join(', ')}</p>}
-                          {phone && <p className="text-stone-400 text-xs">{phone}</p>}
+                          {phone && <p className="text-stone-400 text-xs">{formatPhone(phone)}</p>}
                           {user.role === 'RESCUE' && user.website && (
                             <a href={user.website} target="_blank" rel="noopener noreferrer" className="text-blue-500 text-xs hover:underline">{user.website}</a>
                           )}

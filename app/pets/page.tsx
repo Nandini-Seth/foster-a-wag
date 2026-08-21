@@ -9,13 +9,15 @@ export default function PetsPage() {
   const [pets, setPets] = useState<any[]>([]);
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({ species: '', city: '', goodWithKids: false, goodWithDogs: false, goodWithCats: false });
+  const [filters, setFilters] = useState({ species: '', city: '', sex: '', availableBy: '', goodWithKids: false, goodWithDogs: false, goodWithCats: false });
 
   const fetchPets = async () => {
     setLoading(true);
     const params = new URLSearchParams();
     if (filters.species) params.set('species', filters.species);
     if (filters.city) params.set('city', filters.city);
+    if (filters.sex) params.set('sex', filters.sex);
+    if (filters.availableBy) params.set('availableBy', filters.availableBy);
     if (filters.goodWithKids) params.set('goodWithKids', '1');
     if (filters.goodWithDogs) params.set('goodWithDogs', '1');
     if (filters.goodWithCats) params.set('goodWithCats', '1');
@@ -69,23 +71,49 @@ export default function PetsPage() {
             </select>
           </div>
           <div>
+            <label className="block text-xs font-semibold text-stone-500 uppercase mb-1.5">Sex</label>
+            <select value={filters.sex} onChange={e => setFilters(f => ({...f, sex: e.target.value}))}
+              className="border border-stone-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+              <option value="">Any</option>
+              <option value="Female">Female</option>
+              <option value="Male">Male</option>
+              <option value="Unknown">Unknown</option>
+            </select>
+          </div>
+          <div>
             <label className="block text-xs font-semibold text-stone-500 uppercase mb-1.5">City</label>
             <input value={filters.city} onChange={e => setFilters(f => ({...f, city: e.target.value}))} placeholder="e.g. Toronto"
               className="border border-stone-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
           </div>
-          <div className="flex flex-wrap gap-3">
-            {[['goodWithKids', '👶 Good w/ Kids'], ['goodWithDogs', '🐶 Good w/ Dogs'], ['goodWithCats', '🐱 Good w/ Cats']].map(([key, label]) => (
-              <label key={key} className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" checked={(filters as any)[key]}
-                  onChange={e => setFilters(f => ({...f, [key]: e.target.checked}))}
-                  className="w-4 h-4 accent-amber-500" />
-                <span className="text-sm text-stone-700">{label}</span>
-              </label>
-            ))}
+          <div>
+            <label className="block text-xs font-semibold text-stone-500 uppercase mb-1.5">Available by</label>
+            <input type="date" value={filters.availableBy} onChange={e => setFilters(f => ({...f, availableBy: e.target.value}))}
+              title="Show pets ready on or before this date"
+              className="border border-stone-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
           </div>
-          <button onClick={fetchPets} className="bg-green-800 hover:bg-green-700 text-white font-semibold px-5 py-2 rounded-lg text-sm transition-colors">
-            Search
-          </button>
+          <div>
+            <span className="block text-xs font-semibold text-stone-500 uppercase mb-1.5">Good with</span>
+            <div className="flex flex-wrap items-center gap-3 py-2">
+              {[['goodWithKids', '👶 Kids'], ['goodWithDogs', '🐶 Dogs'], ['goodWithCats', '🐱 Cats']].map(([key, label]) => (
+                <label key={key} className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={(filters as any)[key]}
+                    onChange={e => setFilters(f => ({...f, [key]: e.target.checked}))}
+                    className="w-4 h-4 accent-amber-500" />
+                  <span className="text-sm text-stone-700">{label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          <div className="flex gap-2 py-[1px]">
+            <button onClick={fetchPets} className="bg-green-800 hover:bg-green-700 text-white font-semibold px-5 py-2 rounded-lg text-sm transition-colors">
+              Search
+            </button>
+            <button
+              onClick={() => setFilters({ species: '', city: '', sex: '', availableBy: '', goodWithKids: false, goodWithDogs: false, goodWithCats: false })}
+              className="border border-stone-200 hover:bg-stone-50 text-stone-600 font-medium px-4 py-2 rounded-lg text-sm transition-colors">
+              Clear
+            </button>
+          </div>
         </div>
 
         {loading ? (

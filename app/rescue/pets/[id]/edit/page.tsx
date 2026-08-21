@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import PhotoUpload from '@/components/PhotoUpload';
 import { ProvinceSelect, TriState } from '@/components/FormFields';
-import { TRISTATE_COMPAT, TRISTATE_HOUSE_TRAINED } from '@/lib/forms';
+import { TRISTATE_COMPAT, TRISTATE_HOUSE_TRAINED, urgentByError } from '@/lib/forms';
 import { PET_STATE_HELP, PET_STATE_LABEL, isEditableState, type PetState } from '@/lib/pets';
 
 const EMPTY = {
@@ -58,6 +58,8 @@ export default function EditPetPage({ params }: { params: { id: string } }) {
 
   const save = async () => {
     if (!form.name.trim()) { setError('Pet name is required.'); return; }
+    const dateProblem = urgentByError(form.availableFrom, form.urgentBy);
+    if (dateProblem) { setError(dateProblem); return; }
     setSaving(true); setError(''); setSavedAt('');
     const res = await fetch(`/api/pets/${params.id}`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
@@ -234,7 +236,8 @@ export default function EditPetPage({ params }: { params: { id: string } }) {
               </div>
               <div>
                 <label className={lx}>Urgent By (optional)</label>
-                <input type="date" value={form.urgentBy} onChange={e => update('urgentBy', e.target.value)} className={cx} />
+                <input type="date" value={form.urgentBy} min={form.availableFrom || undefined}
+                  onChange={e => update('urgentBy', e.target.value)} className={cx} />
               </div>
               <div>
                 <label className={lx}>City</label>

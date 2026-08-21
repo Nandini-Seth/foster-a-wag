@@ -4,7 +4,8 @@ import { getSession } from '@/lib/session';
 import { isUuid } from '@/lib/validate';
 import { denyIfNotActive } from '@/lib/auth';
 import { isPetState, PUBLIC_PET_STATE } from '@/lib/pets';
-import { COMPAT_VALUES, HOUSE_TRAINED_VALUES, isProvinceCode } from '@/lib/forms';
+import { COMPAT_VALUES, HOUSE_TRAINED_VALUES, isProvinceCode, urgentByError } from '@/lib/forms';
+import { logDbError } from '@/lib/schema';
 
 /**
  * ACTIVE posts are public. PENDING and DELETED are visible only to the rescue
@@ -160,8 +161,30 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     return NextResponse.json({ error: 'Select a valid province or territory' }, { status: 400 });
   }
 
+  // An edit may change only one of the two dates, so compare the incoming value
+  // against the stored one rather than against the request alone.
+  const nextAvailableFrom = contentKeys.includes('availableFrom')
+    ? body.availableFrom || null
+    : pet.available_from;
+  const nextUrgentBy = contentKeys.includes('urgentBy') ? body.urgentBy || null : pet.urgent_by;
+  const dateProblem = urgentByError(nextAvailableFrom, nextUrgentBy);
+  if (dateProblem) {
+    return NextResponse.json({ error: dateProblem }, { status: 400 });
+  }
+
   values.push(params.id);
-  await execute(`UPDATE pets SET ${sets.join(', ')} WHERE id = $${values.length}`, values);
+
+  try {
+    await execute(`UPDATE pets SET ${sets.join(', ')} WHERE id = $${values.length}`, values);
+  } catch (err) {
+    if (logDbError('PATCH /api/pets/[id]', err)) {
+      return NextResponse.json(
+        { error: 'This site is being updated and cannot save changes right now. Please try again shortly.' },
+        { status: 503 }
+      );
+    }
+    return NextResponse.json({ error: 'Could not save changes. Please try again.' }, { status: 500 });
+  }
 
   return NextResponse.json({ success: true });
 }

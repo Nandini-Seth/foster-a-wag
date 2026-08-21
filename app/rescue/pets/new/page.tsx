@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import PhotoUpload from '@/components/PhotoUpload';
 import { Field, TextField, ProvinceSelect, TriState, fieldClass } from '@/components/FormFields';
-import { TRISTATE_COMPAT, TRISTATE_HOUSE_TRAINED, requiredErrors } from '@/lib/forms';
+import { TRISTATE_COMPAT, TRISTATE_HOUSE_TRAINED, requiredErrors, urgentByError } from '@/lib/forms';
 
 // Required fields per step. Advancing runs only the current step's rules, so a
 // blank field on step 3 never blocks step 1.
@@ -46,6 +46,10 @@ export default function NewPetPage() {
 
   const validateStep = (n: number) => {
     const found = requiredErrors(form, STEP_REQUIRED[n] ?? []);
+    if (n === 3) {
+      const dateProblem = urgentByError(form.availableFrom, form.urgentBy);
+      if (dateProblem) found.urgentBy = dateProblem;
+    }
     setErrors(found);
     return Object.keys(found).length === 0;
   };
@@ -181,8 +185,16 @@ export default function NewPetPage() {
               <h2 className="font-semibold text-stone-800 mb-2">Availability &amp; Location</h2>
               <div className="grid grid-cols-2 gap-4">
                 <TextField label="Available From" required type="date" value={form.availableFrom}
-                  error={errors.availableFrom} onChange={v => update('availableFrom', v)} />
+                  error={errors.availableFrom}
+                  onChange={v => {
+                    update('availableFrom', v);
+                    setErrors(e => ({ ...e, urgentBy: urgentByError(v, form.urgentBy) || '' }));
+                  }} />
                 <TextField label="Urgent By (optional)" type="date" value={form.urgentBy}
+                  error={errors.urgentBy}
+                  // The picker itself refuses earlier dates; the check on submit
+                  // covers typed input and a later change to available-from.
+                  min={form.availableFrom || undefined}
                   onChange={v => update('urgentBy', v)} />
                 <TextField label="City" required value={form.city} error={errors.city}
                   placeholder="Toronto" onChange={v => update('city', v)} />

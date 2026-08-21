@@ -1,5 +1,5 @@
 'use client';
-import { PROVINCES } from '@/lib/forms';
+import { PROVINCES, normalizePhone, formatPhone } from '@/lib/forms';
 
 const INPUT =
   'w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 disabled:bg-stone-100 disabled:text-stone-400';
@@ -217,5 +217,64 @@ export function TriState({
         })}
       </div>
     </div>
+  );
+}
+
+/**
+ * Phone input that will not accept anything but digits.
+ *
+ * Non-digits are stripped as the person types rather than rejected afterwards —
+ * they can still paste "(416) 555-0100" and it simply becomes the digits. The
+ * value handed to the form is always bare digits; the display is formatted once
+ * all ten are present, so the field is not fighting the cursor mid-entry.
+ */
+export function PhoneField({
+  label = 'Phone',
+  value,
+  onChange,
+  onBlur,
+  error,
+  required = true,
+  disabled,
+  placeholder = '416 555 0100',
+}: {
+  label?: string;
+  value: string;
+  onChange: (v: string) => void;
+  onBlur?: () => void;
+  error?: string;
+  required?: boolean;
+  disabled?: boolean;
+  placeholder?: string;
+}) {
+  const id = `phone-${label.replace(/\W+/g, '-').toLowerCase()}`;
+  const digits = normalizePhone(value);
+  // Show the tidy form only once it is complete, so formatting never appears
+  // and disappears while someone is still typing.
+  const shown = digits.length === 10 ? formatPhone(digits) : value;
+
+  return (
+    <Field
+      label={label}
+      required={required}
+      error={error}
+      hint={error ? undefined : '10 digits'}
+      htmlFor={id}
+    >
+      <input
+        id={id}
+        type="tel"
+        inputMode="numeric"
+        autoComplete="tel"
+        maxLength={20}
+        value={shown}
+        placeholder={placeholder}
+        disabled={disabled}
+        onChange={(e) => onChange(normalizePhone(e.target.value).slice(0, 10))}
+        onBlur={onBlur}
+        aria-invalid={!!error}
+        className={fieldClass(error)}
+      />
+    </Field>
   );
 }

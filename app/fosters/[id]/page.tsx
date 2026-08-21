@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
+import { formatPhone } from '@/lib/forms';
 
 export default function FosterProfilePage({ params }: { params: { id: string } }) {
   const [foster, setFoster] = useState<any>(null);
@@ -54,7 +55,7 @@ export default function FosterProfilePage({ params }: { params: { id: string } }
             <div className="bg-stone-50 rounded-xl p-4">
               <p className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-2">Contact</p>
               <p className="text-stone-700 text-sm">{foster.email}</p>
-              {foster.phone && <p className="text-stone-700 text-sm">{foster.phone}</p>}
+              {foster.phone && <p className="text-stone-700 text-sm">{formatPhone(foster.phone)}</p>}
             </div>
             <div className="bg-stone-50 rounded-xl p-4">
               <p className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-2">Home</p>

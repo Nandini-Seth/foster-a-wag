@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { queryOne, execute } from '@/lib/db';
 import { getSession } from '@/lib/session';
 import { denyIfNotActive } from '@/lib/auth';
+import { isValidPhone, normalizePhone } from '@/lib/forms';
 
 export async function GET() {
   const session = await getSession();
@@ -24,6 +25,10 @@ export async function PUT(req: NextRequest) {
 
   const body = await req.json();
 
+  if (body.phone && !isValidPhone(body.phone)) {
+    return NextResponse.json({ error: 'Enter a 10-digit phone number' }, { status: 400 });
+  }
+
   const complete = !!(body.fullName && body.phone && body.city && body.dwellingType && body.availableFrom);
 
   await execute(
@@ -34,7 +39,7 @@ export async function PUT(req: NextRequest) {
        reminder_frequency = $14, profile_complete = $15, photo_url = $16, updated_at = now()
      WHERE user_id = $17`,
     [
-      body.fullName || null, body.phone || null, body.city || null,
+      body.fullName || null, body.phone ? normalizePhone(body.phone) : null, body.city || null,
       body.province || null, body.postalCode || null,
       body.dwellingType || null, !!body.fencedBackyard,
       body.numAdults || 1, body.numChildren || 0,

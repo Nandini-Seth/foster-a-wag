@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import { queryOne, transaction } from '@/lib/db';
-import { isValidEmail, isProvinceCode } from '@/lib/forms';
+import { isValidEmail, isProvinceCode, isValidPhone, normalizePhone } from '@/lib/forms';
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -44,6 +44,9 @@ export async function POST(req: NextRequest) {
     if (profile?.province && !isProvinceCode(profile.province)) {
       return NextResponse.json({ error: 'Select a valid province or territory' }, { status: 400 });
     }
+    if (profile?.phone && !isValidPhone(profile.phone)) {
+      return NextResponse.json({ error: 'Enter a 10-digit phone number' }, { status: 400 });
+    }
 
     const normalizedEmail = String(email).trim().toLowerCase();
 
@@ -73,7 +76,7 @@ export async function POST(req: NextRequest) {
               available_from, reminder_frequency, profile_complete)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
           [
-            profileId, userId, fullName || '', p.phone || null, p.city || null,
+            profileId, userId, fullName || '', p.phone ? normalizePhone(p.phone) : null, p.city || null,
             p.province || null, p.postalCode || null, p.dwellingType || null,
             !!p.fencedBackyard, p.numAdults || 1, p.numChildren || 0,
             JSON.stringify(p.otherPets || []),
@@ -87,7 +90,7 @@ export async function POST(req: NextRequest) {
              (id, user_id, org_name, phone, city, province, website, contact_email, address)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
           [
-            profileId, userId, orgName || '', p.phone || null, p.city || null,
+            profileId, userId, orgName || '', p.phone ? normalizePhone(p.phone) : null, p.city || null,
             p.province || null, p.website || null, p.contactEmail || normalizedEmail,
             p.address || null,
           ]

@@ -79,3 +79,55 @@ export function requiredErrors(
   }
   return errors;
 }
+
+/**
+ * Phone numbers are stored as ten digits and nothing else.
+ *
+ * People type them a dozen ways — (416) 555-0100, 416.555.0100, +1 416 555 0100.
+ * Normalising on the way in means the stored value is comparable and the display
+ * format is a rendering choice rather than whatever the last person typed.
+ */
+export function normalizePhone(value: string): string {
+  const digits = String(value ?? '').replace(/\D/g, '');
+  // Tolerate a leading North American country code, since people paste it.
+  return digits.length === 11 && digits.startsWith('1') ? digits.slice(1) : digits;
+}
+
+export function isValidPhone(value: unknown): boolean {
+  return typeof value === 'string' && /^\d{10}$/.test(normalizePhone(value));
+}
+
+export function phoneError(value: string, required = true): string | null {
+  const raw = String(value ?? '').trim();
+  if (!raw) return required ? 'Phone number is required' : null;
+  if (/[A-Za-z]/.test(raw)) return 'Phone numbers cannot contain letters';
+
+  const digits = normalizePhone(raw);
+  if (digits.length < 10) return `Enter all 10 digits — ${digits.length} so far`;
+  if (digits.length > 10) return `That is ${digits.length} digits. Enter a 10-digit number.`;
+  return null;
+}
+
+/** Ten stored digits, rendered for people. */
+export function formatPhone(value: string | null | undefined): string {
+  const d = normalizePhone(String(value ?? ''));
+  if (d.length !== 10) return String(value ?? '');
+  return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
+}
+
+/**
+ * A pet cannot need placement before it is available to be placed. Guarding this
+ * keeps the listing coherent — an urgent-by in the past relative to availability
+ * would render as a deadline that has already passed on arrival.
+ */
+export function urgentByError(
+  availableFrom: string | null | undefined,
+  urgentBy: string | null | undefined
+): string | null {
+  if (!availableFrom || !urgentBy) return null;
+  // Both are bare YYYY-MM-DD, which compares correctly as a string.
+  if (urgentBy < availableFrom) {
+    return 'The urgent-by date cannot be before the available-from date';
+  }
+  return null;
+}

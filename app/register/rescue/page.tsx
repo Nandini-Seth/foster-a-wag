@@ -1,9 +1,10 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
+import Navbar from '@/components/Navbar';
 import { useRouter } from 'next/navigation';
-import { EmailField, TextField, ProvinceSelect } from '@/components/FormFields';
-import { emailError, requiredErrors } from '@/lib/forms';
+import { EmailField, TextField, PhoneField, ProvinceSelect } from '@/components/FormFields';
+import { emailError, phoneError, requiredErrors } from '@/lib/forms';
 
 export default function RescueRegisterPage() {
   const router = useRouter();
@@ -37,6 +38,10 @@ export default function RescueRegisterPage() {
       const e = emailError(form.email);
       if (e) found.email = e;
     }
+    if (form.phone && !found.phone) {
+      const e = phoneError(form.phone);
+      if (e) found.phone = e;
+    }
     if (form.password && form.password.length < 8) found.password = 'Use at least 8 characters';
     if (form.confirmPassword && form.password !== form.confirmPassword) {
       found.confirmPassword = "Passwords don't match";
@@ -66,11 +71,13 @@ export default function RescueRegisterPage() {
     if (!res.ok) { setError(data.error); setLoading(false); return; }
 
     setLoading(false);
-    router.push('/registration-received?role=rescue');
+    router.push('/registration-received');
   };
 
   return (
-    <div className="min-h-screen bg-amber-50 flex flex-col items-center justify-center px-4 py-12">
+    <>
+      <Navbar />
+    <div className="min-h-[calc(100vh-4rem)] bg-amber-50 flex flex-col items-center justify-center px-4 py-12">
       <div className="bg-white rounded-2xl shadow-sm border border-stone-100 p-8 w-full max-w-lg">
         <div className="text-center mb-6">
           <Link href="/" className="text-3xl">🐾</Link>
@@ -90,8 +97,9 @@ export default function RescueRegisterPage() {
                 <ProvinceSelect required value={form.province} error={errors.province}
                   onChange={v => update('province', v)} />
               </div>
-              <TextField label="Phone" required value={form.phone} error={errors.phone}
-                placeholder="416-555-0100" onChange={v => update('phone', v)} />
+              <PhoneField value={form.phone} error={errors.phone}
+                onChange={v => update('phone', v)}
+                onBlur={() => setErrors(prev => ({ ...prev, phone: (form.phone ? phoneError(form.phone) : null) || '' }))} />
               <TextField label="Website (optional)" value={form.website}
                 placeholder="https://yourrescue.org" onChange={v => update('website', v)} />
             </div>
@@ -128,5 +136,6 @@ export default function RescueRegisterPage() {
         </p>
       </div>
     </div>
+    </>
   );
 }

@@ -1,8 +1,11 @@
 import Link from 'next/link';
+import Navbar from '@/components/Navbar';
 
 export default function RegisterPage() {
   return (
-    <div className="min-h-screen bg-amber-50 flex flex-col items-center justify-center px-4 py-12">
+    <>
+      <Navbar />
+    <div className="min-h-[calc(100vh-4rem)] bg-amber-50 flex flex-col items-center justify-center px-4 py-12">
       <Link href="/" className="text-5xl mb-4">🐾</Link>
       <h1 className="font-display text-4xl text-green-900 mb-2 text-center">Join Foster A Wag</h1>
       <p className="text-stone-500 mb-10 text-center">Who are you? Choose your path below.</p>
@@ -33,5 +36,6 @@ export default function RegisterPage() {
         Already have an account? <Link href="/login" className="text-amber-600 hover:underline font-medium">Sign in</Link>
       </p>
     </div>
+    </>
   );
 }

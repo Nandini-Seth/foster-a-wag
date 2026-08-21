@@ -1,9 +1,10 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
+import Navbar from '@/components/Navbar';
 import { useRouter } from 'next/navigation';
-import { EmailField, TextField, ProvinceSelect, fieldClass } from '@/components/FormFields';
-import { emailError, requiredErrors } from '@/lib/forms';
+import { EmailField, TextField, PhoneField, ProvinceSelect, fieldClass } from '@/components/FormFields';
+import { emailError, phoneError, requiredErrors } from '@/lib/forms';
 
 export default function FosterRegisterPage() {
   const router = useRouter();
@@ -45,6 +46,10 @@ export default function FosterRegisterPage() {
 
   const validateStep = (n: number) => {
     const found = requiredErrors(form, STEP_REQUIRED[n] ?? {} as any);
+    if (n === 2 && form.phone && !found.phone) {
+      const e = phoneError(form.phone);
+      if (e) found.phone = e;
+    }
     if (n === 1) {
       if (form.email && !found.email) {
         const e = emailError(form.email);
@@ -96,14 +101,16 @@ export default function FosterRegisterPage() {
     if (!res.ok) { setError(data.error); setLoading(false); return; }
 
     setLoading(false);
-    router.push('/registration-received?role=foster');
+    router.push('/registration-received');
   };
 
   const cx = "w-full border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400";
   const lx = "block text-sm font-medium text-stone-700 mb-1";
 
   return (
-    <div className="min-h-screen bg-amber-50 flex flex-col items-center justify-center px-4 py-12">
+    <>
+      <Navbar />
+    <div className="min-h-[calc(100vh-4rem)] bg-amber-50 flex flex-col items-center justify-center px-4 py-12">
       <div className="bg-white rounded-2xl shadow-sm border border-stone-100 p-8 w-full max-w-lg">
         <div className="text-center mb-6">
           <Link href="/" className="text-3xl">🐾</Link>
@@ -143,8 +150,9 @@ export default function FosterRegisterPage() {
           <div className="space-y-4">
             <h2 className="font-semibold text-stone-800">Your Home &amp; Contact</h2>
             <div className="grid grid-cols-2 gap-4">
-              <TextField label="Phone" required value={form.phone} error={errors.phone}
-                placeholder="647-555-0100" onChange={v => update('phone', v)} />
+              <PhoneField value={form.phone} error={errors.phone}
+                onChange={v => update('phone', v)}
+                onBlur={() => setErrors(prev => ({ ...prev, phone: (form.phone ? phoneError(form.phone) : null) || '' }))} />
               <TextField label="City" required value={form.city} error={errors.city}
                 placeholder="Toronto" onChange={v => update('city', v)} />
               <ProvinceSelect required value={form.province} error={errors.province}
@@ -244,5 +252,6 @@ export default function FosterRegisterPage() {
         </p>
       </div>
     </div>
+    </>
   );
 }

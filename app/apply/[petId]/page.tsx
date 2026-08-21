@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import PetPhoto from '@/components/PetPhoto';
+import { PhoneField } from '@/components/FormFields';
+import { phoneError } from '@/lib/forms';
 
 export default function ApplyPage({ params }: { params: { petId: string } }) {
   const router = useRouter();
@@ -11,6 +13,7 @@ export default function ApplyPage({ params }: { params: { petId: string } }) {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [form, setForm] = useState({
     motivation: '', dailySchedule: '',
     vetRefName: '', vetRefPhone: '',
@@ -37,6 +40,14 @@ export default function ApplyPage({ params }: { params: { petId: string } }) {
     e.preventDefault();
     if (!form.agreedToTerms) { setError('You must agree to the fostering terms.'); return; }
     if (!form.signature) { setError('Please provide your digital signature.'); return; }
+    // References are optional, but a partly-typed number is a mistake worth catching.
+    const refErrors: Record<string, string> = {};
+    const vet = phoneError(form.vetRefPhone, false);
+    if (vet) refErrors.vetRefPhone = vet;
+    const personal = phoneError(form.personalRefPhone, false);
+    if (personal) refErrors.personalRefPhone = personal;
+    setFieldErrors(refErrors);
+    if (Object.keys(refErrors).length > 0) { setError('Check the reference phone numbers below.'); return; }
     setSubmitting(true); setError('');
 
     const res = await fetch('/api/applications', {
@@ -146,21 +157,17 @@ export default function ApplyPage({ params }: { params: { petId: string } }) {
                   <input value={form.vetRefName} onChange={e => update('vetRefName', e.target.value)} placeholder="Dr. Smith"
                     className="w-full border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-1">Vet Phone</label>
-                  <input value={form.vetRefPhone} onChange={e => update('vetRefPhone', e.target.value)} placeholder="416-555-0100"
-                    className="w-full border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
-                </div>
+                <PhoneField label="Vet Phone" required={false} value={form.vetRefPhone}
+                  error={fieldErrors.vetRefPhone}
+                  onChange={v => { update('vetRefPhone', v); setFieldErrors(e => ({ ...e, vetRefPhone: '' })); }} />
                 <div>
                   <label className="block text-sm font-medium text-stone-700 mb-1">Personal Reference Name</label>
                   <input value={form.personalRefName} onChange={e => update('personalRefName', e.target.value)} placeholder="Jane Doe"
                     className="w-full border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-1">Personal Reference Phone</label>
-                  <input value={form.personalRefPhone} onChange={e => update('personalRefPhone', e.target.value)} placeholder="416-555-0200"
-                    className="w-full border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
-                </div>
+                <PhoneField label="Personal Reference Phone" required={false} value={form.personalRefPhone}
+                  error={fieldErrors.personalRefPhone}
+                  onChange={v => { update('personalRefPhone', v); setFieldErrors(e => ({ ...e, personalRefPhone: '' })); }} />
               </div>
             </div>
 
