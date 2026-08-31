@@ -1,7 +1,7 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import Navbar from '@/components/Navbar';
 import PhotoCarousel from '@/components/PhotoCarousel';
+import SiteFooter from '@/components/SiteFooter';
 import { ABOUT_PHOTOS } from './photos';
 
 export const metadata = {
@@ -78,13 +78,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <footer className="bg-stone-900 px-6 py-8 text-center text-sm text-stone-400">
-        <div className="mb-2 flex items-center justify-center gap-2">
-          <Image src="/logo.jpeg" alt="Foster A Wag" width={28} height={28} className="rounded-full object-cover" />
-          <p className="font-display text-lg italic text-white">Foster A Wag</p>
-        </div>
-        <p>Connecting rescues with loving foster homes across Canada.</p>
-      </footer>
+      <SiteFooter />
     </>
   );
 }

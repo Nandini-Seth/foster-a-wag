@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import { useRouter } from 'next/navigation';
-import { EmailField, TextField, PhoneField, ProvinceSelect, fieldClass } from '@/components/FormFields';
+import { EmailField, TextField, PhoneField, ProvinceSelect, TermsConsent, fieldClass } from '@/components/FormFields';
 import { emailError, phoneError, requiredErrors } from '@/lib/forms';
 
 export default function FosterRegisterPage() {
@@ -19,6 +19,7 @@ export default function FosterRegisterPage() {
     numAdults: 1, numChildren: 0,
     otherAnimals: '',
     availableFrom: '', preferences: { species: [] as string[] },
+    acceptedTerms: false,
     reminderFrequency: 'monthly',
   });
 
@@ -46,6 +47,9 @@ export default function FosterRegisterPage() {
 
   const validateStep = (n: number) => {
     const found = requiredErrors(form, STEP_REQUIRED[n] ?? {} as any);
+    if (n === 3 && !form.acceptedTerms) {
+      found.acceptedTerms = 'Please accept the Terms of Service and Privacy Policy to continue';
+    }
     if (n === 2 && form.phone && !found.phone) {
       const e = phoneError(form.phone);
       if (e) found.phone = e;
@@ -95,6 +99,7 @@ export default function FosterRegisterPage() {
           availableFrom: form.availableFrom, preferences: form.preferences,
           reminderFrequency: form.reminderFrequency,
         },
+        acceptedTerms: form.acceptedTerms,
       }),
     });
     const data = await res.json();
@@ -236,6 +241,8 @@ export default function FosterRegisterPage() {
                 <option value="quarterly">Quarterly</option>
               </select>
             </div>
+            <TermsConsent checked={form.acceptedTerms} error={errors.acceptedTerms}
+              onChange={v => update('acceptedTerms', v)} />
             {error && <p className="text-red-600 text-sm bg-red-50 rounded-lg px-3 py-2">{error}</p>}
             <div className="flex gap-3">
               <button onClick={() => goTo(2)} className="flex-1 border border-stone-200 hover:bg-stone-50 text-stone-700 font-semibold py-3 rounded-xl">← Back</button>

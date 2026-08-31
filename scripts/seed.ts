@@ -108,8 +108,8 @@ async function main() {
            (id, rescue_id, name, species, breed, age_years, sex, weight_kg,
             house_trained, spayed_neutered, vaccinated,
             good_with_kids, good_with_dogs, good_with_cats,
-            bio, available_from, city, province, primary_photo)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)`,
+            bio, available_from, city, province, primary_photo, is_demo)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, true)`,
         [
           uuidv4(), rescueProfileId, pet.name, pet.species, pet.breed, pet.age, pet.sex, pet.weight,
           pet.houseTrained, pet.spayed, pet.vaccinated,

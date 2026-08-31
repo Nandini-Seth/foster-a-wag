@@ -2,7 +2,9 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
+import SiteFooter from '@/components/SiteFooter';
 import PetPhoto from '@/components/PetPhoto';
+import DemoBadge from '@/components/DemoBadge';
 import { AvailableFromBadge } from '@/components/AvailableFrom';
 
 export default function PetsPage() {
@@ -138,6 +140,7 @@ export default function PetsPage() {
                   <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 text-xs font-semibold text-stone-700">
                     {speciesEmoji[pet.species]} {pet.species}
                   </div>
+                  {pet.is_demo && <div className="absolute bottom-3 left-3"><DemoBadge /></div>}
                   {pet.urgent_by && <div className="absolute top-3 right-3 bg-red-500 text-white rounded-full px-2 py-0.5 text-xs font-bold">URGENT</div>}
                 </div>
                 <div className="p-5">
@@ -163,6 +166,7 @@ export default function PetsPage() {
           </div>
         )}
       </div>
+      <SiteFooter />
     </>
   );
 }

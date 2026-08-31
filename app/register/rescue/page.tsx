@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import { useRouter } from 'next/navigation';
-import { EmailField, TextField, PhoneField, ProvinceSelect } from '@/components/FormFields';
+import { EmailField, TextField, PhoneField, ProvinceSelect, TermsConsent } from '@/components/FormFields';
 import { emailError, phoneError, requiredErrors } from '@/lib/forms';
 
 export default function RescueRegisterPage() {
@@ -16,6 +16,7 @@ export default function RescueRegisterPage() {
     orgName: '', phone: '', city: '', province: '',
     website: '', address: '',
   });
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const update = (field: string, val: string) => {
     setForm(f => ({...f, [field]: val}));
@@ -42,6 +43,9 @@ export default function RescueRegisterPage() {
       const e = phoneError(form.phone);
       if (e) found.phone = e;
     }
+    if (!acceptedTerms) {
+      found.acceptedTerms = 'Please accept the Terms of Service and Privacy Policy to continue';
+    }
     if (form.password && form.password.length < 8) found.password = 'Use at least 8 characters';
     if (form.confirmPassword && form.password !== form.confirmPassword) {
       found.confirmPassword = "Passwords don't match";
@@ -65,6 +69,7 @@ export default function RescueRegisterPage() {
           phone: form.phone, city: form.city, province: form.province,
           website: form.website, contactEmail: form.email, address: form.address,
         },
+        acceptedTerms,
       }),
     });
     const data = await res.json();
@@ -122,6 +127,9 @@ export default function RescueRegisterPage() {
                 onChange={v => update('confirmPassword', v)} />
             </div>
           </div>
+
+          <TermsConsent checked={acceptedTerms} error={errors.acceptedTerms}
+            onChange={v => { setAcceptedTerms(v); setErrors(e => ({ ...e, acceptedTerms: '' })); }} />
 
           {error && <p className="text-red-600 text-sm bg-red-50 rounded-lg px-3 py-2">{error}</p>}
 

@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import PetPhoto from '@/components/PetPhoto';
+import DemoBadge from '@/components/DemoBadge';
 import { formatDate, isAvailableNow } from '@/lib/date';
 
 const ROTATE_MS = 5000;
@@ -117,6 +118,8 @@ export default function PetCarousel() {
               {pet.city ? ` · ${pet.city}` : ''}
             </p>
           </div>
+
+          {pet.is_demo && <span className="absolute left-4 top-4"><DemoBadge /></span>}
 
           {pet.urgent_by && (
             <span className="absolute right-4 top-4 rounded-full bg-red-500 px-3 py-1 text-xs font-bold text-white">
