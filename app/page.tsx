@@ -1,7 +1,7 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import Navbar from '@/components/Navbar';
 import PetCarousel from '@/components/PetCarousel';
+import SiteFooter from '@/components/SiteFooter';
 
 export default function Home() {
   return (
@@ -122,14 +122,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-stone-900 text-stone-400 text-sm text-center py-8 px-6">
-        <div className="flex items-center justify-center gap-2 mb-2">
-          <Image src="/logo.jpeg" alt="Foster A Wag" width={28} height={28} className="rounded-full object-cover" />
-          <p className="font-display text-white text-lg italic">Foster A Wag</p>
-        </div>
-        <p>Connecting rescues with loving foster homes across Canada.</p>
-      </footer>
+      <SiteFooter />
     </>
   );
 }

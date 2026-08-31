@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import { formatPhone } from '@/lib/forms';
 import PetPhoto from '@/components/PetPhoto';
+import DemoBadge from '@/components/DemoBadge';
 
 // The account review sequence. Only ACTIVE accounts can sign in.
 const statusColors: Record<string, string> = {
@@ -275,6 +276,7 @@ export default function AdminDashboardClient() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="font-semibold text-stone-800">{pet.name}</p>
+                        {pet.is_demo && <DemoBadge />}
                         <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${petStatusColors[pet.status] || 'bg-stone-100 text-stone-500'}`}>
                           {pet.status.replace('_', ' ')}
                         </span>

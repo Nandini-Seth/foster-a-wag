@@ -18,7 +18,7 @@ const MIN_PASSWORD_LENGTH = 8;
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { email, password, role, orgName, fullName, profile } = body;
+    const { email, password, role, orgName, fullName, profile, acceptedTerms } = body;
 
     if (!email || !password || !role) {
       return NextResponse.json({ error: 'Email, password, and role are required' }, { status: 400 });
@@ -47,6 +47,14 @@ export async function POST(req: NextRequest) {
     if (profile?.phone && !isValidPhone(profile.phone)) {
       return NextResponse.json({ error: 'Enter a 10-digit phone number' }, { status: 400 });
     }
+    // Required, and recorded: the Privacy Policy treats creating an account as
+    // the moment consent is given, so there needs to be a record of it.
+    if (acceptedTerms !== true) {
+      return NextResponse.json(
+        { error: 'You must accept the Terms of Service and Privacy Policy to create an account' },
+        { status: 400 }
+      );
+    }
 
     const normalizedEmail = String(email).trim().toLowerCase();
 
@@ -62,8 +70,8 @@ export async function POST(req: NextRequest) {
 
     await transaction(async (client) => {
       await client.query(
-        `INSERT INTO users (id, email, password_hash, role, email_verified, status)
-         VALUES ($1, $2, $3, $4, false, 'PENDING')`,
+        `INSERT INTO users (id, email, password_hash, role, email_verified, status, terms_accepted_at)
+         VALUES ($1, $2, $3, $4, false, 'PENDING', now())`,
         [userId, normalizedEmail, hash, role]
       );
 

@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { PROVINCES, normalizePhone, formatPhone } from '@/lib/forms';
 
 const INPUT =
@@ -276,5 +277,66 @@ export function PhoneField({
         className={fieldClass(error)}
       />
     </Field>
+  );
+}
+
+/**
+ * Required agreement to the Terms of Service and Privacy Policy.
+ *
+ * The links open in a new tab: sending someone away mid-registration would lose
+ * everything they have typed, since the form holds its state in memory.
+ */
+export function TermsConsent({
+  checked,
+  onChange,
+  error,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  error?: string;
+}) {
+  return (
+    <div
+      className={`rounded-xl border p-4 ${
+        error ? 'border-red-300 bg-red-50' : 'border-stone-200 bg-stone-50'
+      }`}
+    >
+      <label className="flex cursor-pointer items-start gap-3">
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={(e) => onChange(e.target.checked)}
+          aria-invalid={!!error}
+          aria-describedby={error ? 'terms-consent-error' : undefined}
+          className="mt-0.5 h-4 w-4 flex-shrink-0 accent-green-700"
+        />
+        <span className="text-sm leading-relaxed text-stone-700">
+          By creating an account with us you agree to our{' '}
+          <Link
+            href="/terms"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-amber-700 underline underline-offset-2"
+          >
+            Terms of Service
+          </Link>{' '}
+          and our{' '}
+          <Link
+            href="/privacy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-amber-700 underline underline-offset-2"
+          >
+            Privacy Policy
+          </Link>
+          .
+        </span>
+      </label>
+      {error && (
+        <p id="terms-consent-error" role="alert" className="mt-2 text-sm text-red-600">
+          {error}
+        </p>
+      )}
+    </div>
   );
 }

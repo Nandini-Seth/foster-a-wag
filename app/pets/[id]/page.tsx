@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import PetPhoto from '@/components/PetPhoto';
+import { DemoNotice } from '@/components/DemoBadge';
 import { AvailableFromPanel } from '@/components/AvailableFrom';
 import { formatDate } from '@/lib/date';
 import {
@@ -61,6 +62,12 @@ export default function PetDetailPage({ params }: { params: { id: string } }) {
             <p className={`text-sm ${state === 'DELETED' ? 'text-stone-500' : 'text-amber-800'}`}>
               {PET_STATE_HELP[state]}
             </p>
+          </div>
+        )}
+
+        {pet.is_demo && (
+          <div className="mb-6">
+            <DemoNotice />
           </div>
         )}
 

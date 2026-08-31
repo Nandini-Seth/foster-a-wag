@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import { formatPhone } from '@/lib/forms';
 import PetPhoto from '@/components/PetPhoto';
+import DemoBadge from '@/components/DemoBadge';
 
 export default function RescueDashboardClient() {
   const [data, setData] = useState<any>(null);
@@ -139,7 +140,10 @@ export default function RescueDashboardClient() {
                     </span>
                   </div>
                   <div className="p-4">
-                    <p className="font-semibold text-stone-800">{pet.name}</p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-semibold text-stone-800">{pet.name}</p>
+                      {pet.is_demo && <DemoBadge />}
+                    </div>
                     <p className="text-stone-400 text-xs">{pet.breed||pet.species} · {pet.age_years}yr · {pet.city}</p>
                     {pet.status === 'PENDING' && (
                       <p className="text-amber-700 text-xs mt-1.5">Hidden from the public — only you can see this.</p>
